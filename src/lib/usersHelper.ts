@@ -21,6 +21,15 @@ export const defaultAdminUsers: AdminUser[] = [
     role: 'Administrador',
     status: 'Ativo',
     created_at: new Date().toISOString()
+  },
+  {
+    id: '2',
+    name: 'João Guerra',
+    email: 'joao.guerra@albuquerqueguerra.com.br',
+    password: 'advogados@2026',
+    role: 'Administrador',
+    status: 'Ativo',
+    created_at: new Date().toISOString()
   }
 ];
 

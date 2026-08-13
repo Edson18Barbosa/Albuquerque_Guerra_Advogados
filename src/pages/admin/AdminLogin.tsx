@@ -26,8 +26,12 @@ export const AdminLogin: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    // Check if there is an active user matching email and password
-    const matched = usersList.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+    // Check if there is an active user matching email/name and password
+    const inputClean = email.trim().toLowerCase();
+    const matched = usersList.find(u => 
+      (u.email.toLowerCase() === inputClean || u.name.toLowerCase() === inputClean) && 
+      u.password === password
+    );
 
     if (matched) {
       if (matched.status === 'Inativo') {
