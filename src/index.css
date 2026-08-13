@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Manrope", sans-serif;
+  --color-ag-dark: #101616;
+  --color-ag-deep: #374544;
+  --color-ag-gray: #4D5D5D;
+  --color-ag-champagne: #D8CBB3;
+  --color-ag-light-beige: #EEE8DD;
+  --color-ag-offwhite: #F6F3EC;
+  --color-ag-warmwhite: #FFFDF8;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: #101616;
+    color: #F6F3EC;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+  }
+}
+
+/* 3D and Animation Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-gpu {
+  transform: translateZ(0);
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes reverseSpin {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes bounceSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 25s linear infinite;
+}
+
+.animate-reverse-spin {
+  animation: reverseSpin 30s linear infinite;
+}
+
+.animate-bounce-slow {
+  animation: bounceSlow 4s ease-in-out infinite;
+}
+
+/* Custom smooth animations & glassmorphism */
+.glass-card {
+  background: rgba(55, 69, 68, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(216, 203, 179, 0.15);
+}
+
+.glass-card-hover {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  background: rgba(55, 69, 68, 0.65);
+  border-color: rgba(216, 203, 179, 0.35);
+  transform: translateY(-4px);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #101616;
+}
+::-webkit-scrollbar-thumb {
+  background: #4D5D5D;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D8CBB3;
+}
+
