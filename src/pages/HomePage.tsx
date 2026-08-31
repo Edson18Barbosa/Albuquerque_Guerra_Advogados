@@ -8,6 +8,7 @@ import { MissionVision } from '../components/MissionVision';
 import { Workflow } from '../components/Workflow';
 import { Team } from '../components/Team';
 import { EventsSection } from '../components/EventsSection';
+import { ContentSection } from '../components/ContentSection';
 import { Gallery } from '../components/Gallery';
 import { FinalCTA } from '../components/FinalCTA';
 import { Contact } from '../components/Contact';
@@ -26,6 +27,7 @@ export const HomePage: React.FC = () => {
         <Workflow />
         <Team />
         <EventsSection />
+        <ContentSection />
         <Gallery />
         <FinalCTA />
         <Contact />

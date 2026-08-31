@@ -101,7 +101,8 @@ export const Team: React.FC = () => {
           {team.map((member) => (
             <div
               key={member.id}
-              className="rounded-2xl bg-[#151f1f] border border-[#D8CBB3]/25 hover:border-[#D8CBB3]/70 transition-all duration-500 overflow-hidden flex flex-col justify-between group shadow-2xl hover:-translate-y-2 relative"
+              onClick={() => setSelectedMember(member)}
+              className="rounded-2xl bg-[#151f1f] border border-[#D8CBB3]/25 hover:border-[#D8CBB3]/70 transition-all duration-500 overflow-hidden flex flex-col justify-between group shadow-2xl hover:-translate-y-2 relative cursor-pointer"
             >
               {/* Glow accent on hover */}
               <div className="absolute inset-0 bg-[#D8CBB3]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -112,10 +113,14 @@ export const Team: React.FC = () => {
                 <img
                   src={member.image}
                   alt={member.name}
-                  className="w-full h-full object-cover filter contrast-[1.05]"
+                  className="w-full h-full object-cover filter contrast-[1.05] group-hover:scale-105 transition-transform duration-700"
                   style={getImageStyle(member.image)}
                 />
-
+                
+                {/* Floating zoom indicator */}
+                <div className="absolute bottom-4 right-4 z-20 w-10 h-10 rounded-full bg-[#101616]/80 backdrop-blur-md border border-[#D8CBB3]/40 flex items-center justify-center text-[#D8CBB3] opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ArrowUpRight className="w-5 h-5" />
+                </div>
               </div>
 
               {/* Content Container */}
@@ -132,13 +137,10 @@ export const Team: React.FC = () => {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => setSelectedMember(member)}
-                  className="pt-4 border-t border-white/10 flex items-center justify-between text-sm font-medium text-[#D8CBB3] hover:text-[#FFFDF8] transition-colors group/btn w-full"
-                >
+                <div className="pt-4 border-t border-white/10 flex items-center justify-between text-sm font-medium text-[#D8CBB3] group-hover:text-[#FFFDF8] transition-colors group/btn w-full">
                   <span>Conheça a trajetória completa</span>
-                  <ArrowUpRight className="w-4 h-4 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
-                </button>
+                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                </div>
               </div>
             </div>
           ))}

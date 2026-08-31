@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Target, Compass, Sparkles } from 'lucide-react';
+import { Target, Compass, Sparkles, Maximize2, X, ArrowRight } from 'lucide-react';
 import { getSiteSettings, SiteSettings } from '../lib/settingsHelper';
 
 export const MissionVision: React.FC = () => {
   const [activeMode, setActiveMode] = useState<'missao' | 'visao'>('missao');
   const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     setSettings(getSiteSettings());
@@ -76,6 +77,16 @@ export const MissionVision: React.FC = () => {
                 <div className="space-y-4 text-[#F6F3EC]/90 text-base md:text-lg font-light leading-relaxed whitespace-pre-line">
                   <p>{settings.mission_text}</p>
                 </div>
+
+                <div>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#D8CBB3]/10 border border-[#D8CBB3]/30 text-[#D8CBB3] hover:bg-[#D8CBB3] hover:text-[#101616] text-xs font-semibold uppercase tracking-wider transition-all duration-300 shadow-md"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                    Ler texto completo
+                  </button>
+                </div>
               </div>
 
               <div className="lg:col-span-4 flex items-center justify-center">
@@ -105,6 +116,16 @@ export const MissionVision: React.FC = () => {
                 <div className="space-y-4 text-[#F6F3EC]/90 text-base md:text-lg font-light leading-relaxed whitespace-pre-line">
                   <p>{settings.vision_text}</p>
                 </div>
+
+                <div>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#D8CBB3]/10 border border-[#D8CBB3]/30 text-[#D8CBB3] hover:bg-[#D8CBB3] hover:text-[#101616] text-xs font-semibold uppercase tracking-wider transition-all duration-300 shadow-md"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                    Ler texto completo
+                  </button>
+                </div>
               </div>
 
               <div className="lg:col-span-4 flex items-center justify-center">
@@ -123,7 +144,62 @@ export const MissionVision: React.FC = () => {
 
         </div>
 
+        {/* Pop-up Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-[#151f1f] border border-[#D8CBB3]/40 rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-fadeIn">
+              <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#101616]">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#D8CBB3]" />
+                  <h3 className="text-lg font-serif text-[#FFFDF8]">
+                    {activeMode === 'missao' ? 'Nossa Missão Institucional' : 'Nossa Visão Estratégica'}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-1.5 hover:bg-white/10 rounded-full text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-8 md:p-10 overflow-y-auto space-y-6 text-[#F6F3EC] custom-scrollbar">
+                <h4 className="text-2xl font-serif text-[#D8CBB3] leading-snug">
+                  {activeMode === 'missao'
+                    ? 'Vantajosidade, ética e impacto positivo duradouro.'
+                    : 'Transformação social através da excelência jurídica.'}
+                </h4>
+
+                <div className="text-base text-[#F6F3EC]/90 font-light leading-relaxed whitespace-pre-line space-y-4">
+                  <p>
+                    {activeMode === 'missao' ? settings.mission_text : settings.vision_text}
+                  </p>
+                  
+                  <p>
+                    {activeMode === 'missao'
+                      ? 'Nossa atuação é guiada pela busca incessante pela melhor solução estratégica, combinando profundo rigor técnico, inovação contínua e atendimento dedicado e personalizado a cada cliente.'
+                      : 'Acreditamos que a advocacia de vanguarda desempenha um papel fundamental no fortalecimento das instituições, no fomento ao empreendedorismo sustentável e na defesa intransigente dos direitos e do patrimônio.'}
+                  </p>
+                </div>
+
+                <div className="pt-6 border-t border-white/10 flex justify-between items-center">
+                  <span className="text-xs text-[#D8CBB3] font-serif tracking-wider">
+                    ALBUQUERQUE GUERRA ADVOGADOS
+                  </span>
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-6 py-2.5 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider hover:bg-[#FFFDF8] transition-all"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </section>
   );
 };
+

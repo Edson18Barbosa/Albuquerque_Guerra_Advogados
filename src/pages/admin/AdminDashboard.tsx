@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { AdminEvents } from './AdminEvents';
 import { AdminEventForm } from './AdminEventForm';
+import { AdminContents } from './AdminContents';
 import { AdminMedia } from './AdminMedia';
 import { AdminTeam } from './AdminTeam';
 import { AdminBrand } from './AdminBrand';
@@ -38,6 +39,7 @@ export const AdminDashboard: React.FC = () => {
     { name: 'Forma de atuação', path: '/admin/workflow', icon: Workflow },
     { name: 'Equipe', path: '/admin/team', icon: Users },
     { name: 'Eventos', path: '/admin/events', icon: CalendarIcon },
+    { name: 'Conteúdos, Ads & Avaliações', path: '/admin/contents', icon: FolderOpen },
     { name: 'Galeria', path: '/admin/gallery', icon: ImageIcon },
     { name: 'Contato', path: '/admin/contact', icon: Phone },
     { name: 'SEO e redes sociais', path: '/admin/seo', icon: Globe },
@@ -164,6 +166,8 @@ export const AdminDashboard: React.FC = () => {
               
               <Route path="/events" element={<AdminEvents />} />
               <Route path="/events/new" element={<AdminEventForm />} />
+              <Route path="/contents" element={<AdminContents />} />
+              <Route path="/contents/*" element={<AdminContents />} />
               <Route path="/media" element={<AdminMedia />} />
               <Route path="/team" element={<AdminTeam />} />
               <Route path="/brand" element={<AdminBrand />} />

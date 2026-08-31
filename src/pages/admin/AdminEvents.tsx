@@ -78,6 +78,22 @@ export const AdminEvents: React.FC = () => {
         </div>
       )}
 
+      {/* Tabs Switcher */}
+      <div className="flex gap-2 border-b border-white/10 pb-4">
+        <Link
+          to="/admin/events"
+          className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#D8CBB3] text-[#101616] transition-all"
+        >
+          Eventos ({events.length})
+        </Link>
+        <Link
+          to="/admin/contents"
+          className="px-5 py-2.5 rounded-xl text-sm font-medium text-[#F6F3EC]/70 hover:text-white hover:bg-white/5 transition-all"
+        >
+          Conteúdos, Ads & Avaliações Google
+        </Link>
+      </div>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-serif text-[#FFFDF8] mb-2 font-light">Gerenciar Eventos</h1>
