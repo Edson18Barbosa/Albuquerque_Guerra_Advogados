@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { 
   BookOpen, Video, Star, ArrowRight, ExternalLink, 
-  Calendar, Clock, User, CheckCircle2, Play, Eye, X, MessageSquare, Flame
+  Calendar, Clock, User, CheckCircle2, Play, Eye, X
 } from 'lucide-react';
 import { Article, VideoAd, GoogleReview } from '../types/contents';
 import { getArticles, getVideoAds, getGoogleReviews } from '../lib/contentsHelper';
+import { getSiteSettings, SiteSettings } from '../lib/settingsHelper';
 
 export const ContentSection: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'articles' | 'videos' | 'reviews'>('articles');
   const [articles, setArticles] = useState<Article[]>([]);
   const [videos, setVideos] = useState<VideoAd[]>([]);
   const [reviews, setReviews] = useState<GoogleReview[]>([]);
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [activeVideoModal, setActiveVideoModal] = useState<VideoAd | null>(null);
   const [articleCategoryFilter, setArticleCategoryFilter] = useState('Todos');
@@ -24,13 +26,28 @@ export const ContentSection: React.FC = () => {
           getGoogleReviews()
         ]);
         setArticles(arts.filter(a => a.is_active && a.status === 'Publicado'));
-        setVideos(vids.filter(v => v.is_active));
+        // Only keep active videos that have a valid link
+        const validVideos = vids.filter(v => v.is_active && v.video_url && v.video_url.trim() !== '');
+        setVideos(validVideos);
         setReviews(revs.filter(r => r.is_active));
+        setSettings(getSiteSettings());
       } catch (err) {
         console.warn('Error loading contents in public section:', err);
       }
     };
     loadAllContents();
+  }, []);
+
+  // Close modal on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveVideoModal(null);
+        setSelectedArticle(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const articleCategories = ['Todos', 'Artigo Jurídico', 'Publicação', 'Campanha', 'Notícia'];
@@ -39,6 +56,9 @@ export const ContentSection: React.FC = () => {
     if (articleCategoryFilter === 'Todos') return true;
     return a.category === articleCategoryFilter;
   });
+
+  const hasVideos = videos.length > 0;
+  const googleReviewsLink = settings?.google_reviews_url || 'https://share.google/rHwBjzhN1Mp6eJvRo';
 
   return (
     <section id="conteudos" className="py-32 bg-[#101616] relative border-t border-[#D8CBB3]/10 overflow-hidden">
@@ -51,10 +71,10 @@ export const ContentSection: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#D8CBB3]/10 border border-[#D8CBB3]/30 text-[#D8CBB3] text-xs font-semibold tracking-wider uppercase mb-4">
               <BookOpen className="w-3.5 h-3.5" />
-              Conteúdos, Mídias & Avaliações
+              Conteúdos & Avaliações
             </div>
             <h2 className="text-3xl md:text-5xl font-serif text-[#FFFDF8] max-w-2xl leading-tight">
-              Artigos, campanhas em vídeo e a voz de quem confia em nosso trabalho.
+              Artigos, análises jurídicas e a voz de quem confia em nosso trabalho.
             </h2>
           </div>
 
@@ -71,17 +91,22 @@ export const ContentSection: React.FC = () => {
               <BookOpen className="w-4 h-4" />
               Artigos & Publicações
             </button>
-            <button
-              onClick={() => setActiveTab('videos')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                activeTab === 'videos'
-                  ? 'bg-[#D8CBB3] text-[#101616] shadow-lg font-semibold'
-                  : 'text-[#F6F3EC]/70 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Video className="w-4 h-4" />
-              Vídeos & Campanhas Ads
-            </button>
+
+            {/* Vídeos tab ONLY appears when there are videos added */}
+            {hasVideos && (
+              <button
+                onClick={() => setActiveTab('videos')}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  activeTab === 'videos'
+                    ? 'bg-[#D8CBB3] text-[#101616] shadow-lg font-semibold'
+                    : 'text-[#F6F3EC]/70 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Video className="w-4 h-4" />
+                Vídeos
+              </button>
+            )}
+
             <button
               onClick={() => setActiveTab('reviews')}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
@@ -96,7 +121,7 @@ export const ContentSection: React.FC = () => {
           </div>
         </div>
 
-        {/* TAB 1: ARTIGOS & PUBLICAÇÕES */}
+        {/* TAB 1: ARTIGOS & PUBLICAÇÕES (Clean without tags) */}
         {activeTab === 'articles' && (
           <div className="space-y-10 animate-fadeIn">
             {/* Categories filter */}
@@ -121,34 +146,18 @@ export const ContentSection: React.FC = () => {
               {filteredArticles.map(article => (
                 <div
                   key={article.id}
-                  className="bg-[#151f1f] border border-white/10 rounded-3xl overflow-hidden hover:border-[#D8CBB3]/40 transition-all duration-300 flex flex-col group hover:-translate-y-1 hover:shadow-2xl"
+                  onClick={() => setSelectedArticle(article)}
+                  className="bg-[#151f1f] border border-white/10 rounded-3xl overflow-hidden hover:border-[#D8CBB3]/40 transition-all duration-300 flex flex-col group hover:-translate-y-1 hover:shadow-2xl cursor-pointer"
                 >
-                  {/* Article Cover */}
-                  <div className="relative h-52 overflow-hidden bg-[#101616]">
+                  <div className="relative h-56 overflow-hidden bg-[#101616]">
                     <img
                       src={article.cover_image || '/about-office.png'}
                       alt={article.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-85 group-hover:opacity-100"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#151f1f] via-transparent to-black/30" />
-                    
-                    <div className="absolute top-4 left-4 flex gap-2">
-                      <span className="px-3 py-1 bg-[#101616]/90 backdrop-blur-md border border-[#D8CBB3]/30 rounded-full text-[11px] font-semibold text-[#D8CBB3] uppercase tracking-wider">
-                        {article.category}
-                      </span>
-                    </div>
-
-                    {article.is_featured && (
-                      <div className="absolute top-4 right-4">
-                        <span className="px-2.5 py-1 bg-amber-500/20 backdrop-blur-md border border-amber-400/40 rounded-full text-[10px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1">
-                          <Flame className="w-3 h-3 text-amber-400 fill-amber-400" />
-                          Destaque
-                        </span>
-                      </div>
-                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#151f1f] via-transparent to-transparent opacity-80" />
                   </div>
 
-                  {/* Article Body */}
                   <div className="p-6 md:p-8 flex flex-col flex-grow justify-between space-y-6">
                     <div className="space-y-3">
                       <div className="flex items-center gap-4 text-xs text-[#F6F3EC]/50 font-light">
@@ -177,13 +186,10 @@ export const ContentSection: React.FC = () => {
                         {article.author}
                       </span>
 
-                      <button
-                        onClick={() => setSelectedArticle(article)}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#D8CBB3] hover:text-[#FFFDF8] transition-colors group/btn"
-                      >
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#D8CBB3] group-hover:text-[#FFFDF8] transition-colors">
                         Ler artigo completo
-                        <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
-                      </button>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -192,70 +198,45 @@ export const ContentSection: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 2: VÍDEOS & CAMPANHAS ADS */}
-        {activeTab === 'videos' && (
+        {/* TAB 2: VÍDEOS */}
+        {activeTab === 'videos' && hasVideos && (
           <div className="space-y-10 animate-fadeIn">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {videos.map(video => (
                 <div
                   key={video.id}
-                  className="bg-[#151f1f] border border-white/10 rounded-3xl overflow-hidden hover:border-[#D8CBB3]/40 transition-all duration-300 flex flex-col group hover:-translate-y-1 shadow-xl"
+                  onClick={() => setActiveVideoModal(video)}
+                  className="bg-[#151f1f] border border-white/10 rounded-3xl overflow-hidden hover:border-[#D8CBB3]/40 transition-all duration-300 flex flex-col group hover:-translate-y-1 shadow-xl cursor-pointer"
                 >
-                  {/* Video Thumbnail & Trigger */}
-                  <div 
-                    onClick={() => setActiveVideoModal(video)}
-                    className="relative h-56 bg-black cursor-pointer overflow-hidden group/vid"
-                  >
+                  <div className="relative h-60 bg-black overflow-hidden">
                     <img
                       src={video.thumbnail_url || '/joao-guerra.jpg'}
                       alt={video.title}
-                      className="w-full h-full object-cover opacity-75 group-hover/vid:scale-105 group-hover/vid:opacity-90 transition-all duration-700"
+                      className="w-full h-full object-cover opacity-75 group-hover:scale-105 group-hover:opacity-90 transition-all duration-700"
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-[#D8CBB3] text-[#101616] flex items-center justify-center shadow-2xl group-hover/vid:scale-110 group-hover/vid:bg-[#FFFDF8] transition-transform">
+                      <div className="w-16 h-16 rounded-full bg-[#D8CBB3] text-[#101616] flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:bg-[#FFFDF8] transition-transform">
                         <Play className="w-7 h-7 fill-[#101616] translate-x-0.5" />
                       </div>
                     </div>
-
-                    <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1 bg-[#101616]/90 backdrop-blur-md border border-[#D8CBB3]/30 rounded-full text-[11px] font-semibold text-[#D8CBB3]">
-                        {video.platform}
-                      </span>
-                    </div>
-
-                    {video.views_count && (
-                      <div className="absolute bottom-4 right-4">
-                        <span className="px-3 py-1 bg-black/80 backdrop-blur-md rounded-full text-[11px] text-white/90 font-light flex items-center gap-1.5">
-                          <Eye className="w-3.5 h-3.5 text-[#D8CBB3]" />
-                          {video.views_count}
-                        </span>
-                      </div>
-                    )}
                   </div>
 
-                  {/* Video Details & Ads CTA */}
-                  <div className="p-6 md:p-8 flex flex-col flex-grow justify-between space-y-6">
-                    <div className="space-y-3">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#D8CBB3]">
-                        {video.target_campaign}
-                      </span>
-                      <h3 className="text-lg font-serif text-[#FFFDF8] font-medium leading-snug">
+                  <div className="p-6 md:p-8 flex flex-col flex-grow justify-between space-y-4">
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-serif text-[#FFFDF8] font-medium leading-snug group-hover:text-[#D8CBB3] transition-colors">
                         {video.title}
                       </h3>
-                      <p className="text-[#F6F3EC]/70 text-sm font-light leading-relaxed">
-                        {video.description}
-                      </p>
+                      {video.description && (
+                        <p className="text-[#F6F3EC]/70 text-sm font-light leading-relaxed line-clamp-3">
+                          {video.description}
+                        </p>
+                      )}
                     </div>
 
-                    <a
-                      href={video.cta_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-3.5 px-4 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-xs tracking-wide uppercase transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-[1.01]"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      {video.cta_text}
-                    </a>
+                    <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-[#D8CBB3] font-medium">
+                      <span>Assistir vídeo</span>
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -265,11 +246,11 @@ export const ContentSection: React.FC = () => {
 
         {/* TAB 3: AVALIAÇÕES DO GOOGLE */}
         {activeTab === 'reviews' && (
-          <div className="space-y-12 animate-fadeIn">
-            {/* Google Verified Banner */}
-            <div className="bg-gradient-to-r from-[#151f1f] via-[#1b2727] to-[#151f1f] border border-[#D8CBB3]/30 rounded-3xl p-8 md:p-10 flex flex-col lg:flex-row items-center justify-between gap-8 shadow-2xl">
+          <div className="space-y-10 animate-fadeIn">
+            {/* Google Verified Official Showcase Box */}
+            <div className="bg-gradient-to-r from-[#151f1f] via-[#1b2727] to-[#151f1f] border border-[#D8CBB3]/30 rounded-3xl p-8 md:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 shadow-2xl">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
-                {/* Google "G" Badge */}
+                {/* Official Google G icon */}
                 <div className="w-20 h-20 rounded-2xl bg-white flex items-center justify-center p-3 shadow-xl shrink-0">
                   <svg className="w-12 h-12" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -278,8 +259,9 @@ export const ContentSection: React.FC = () => {
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                   </svg>
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-center sm:justify-start gap-2">
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center sm:justify-start gap-2.5">
                     <span className="text-3xl font-bold text-[#FFFDF8]">5.0</span>
                     <div className="flex text-amber-400">
                       {[...Array(5)].map((_, i) => (
@@ -287,98 +269,117 @@ export const ContentSection: React.FC = () => {
                       ))}
                     </div>
                   </div>
-                  <h3 className="text-xl font-serif text-[#FFFDF8]">Albuquerque Guerra Advogados no Google</h3>
-                  <p className="text-xs text-[#F6F3EC]/70 flex items-center justify-center sm:justify-start gap-1.5">
+
+                  <h3 className="text-2xl font-serif text-[#FFFDF8]">
+                    Albuquerque Guerra Advogados no Google
+                  </h3>
+
+                  <p className="text-xs text-[#F6F3EC]/80 flex items-center justify-center sm:justify-start gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    Avaliações verificadas de clientes atendidos
+                    Avaliações e depoimentos verificados diretamente no Google Maps
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+              <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full lg:w-auto">
                 <a
-                  href="https://share.google/rHwBjzhN1Mp6eJvRo"
+                  href={googleReviewsLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3.5 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-xs tracking-wide uppercase transition-all flex items-center justify-center gap-2 shadow-lg"
+                  className="px-6 py-3.5 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Star className="w-4 h-4 text-[#101616] fill-[#101616]" />
-                  Ver Todas as Avaliações no Google
+                  <span>Ver Avaliações no Google</span>
                   <ExternalLink className="w-4 h-4" />
                 </a>
+
                 <a
-                  href="https://share.google/rHwBjzhN1Mp6eJvRo"
+                  href={googleReviewsLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 text-[#FFFDF8] font-semibold rounded-xl text-xs tracking-wide uppercase transition-all flex items-center justify-center gap-2"
+                  className="px-6 py-3.5 bg-white/5 hover:bg-white/10 border border-white/15 text-[#FFFDF8] font-semibold rounded-xl text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
                 >
-                  Avaliar no Google
+                  <span>Deixar Avaliação</span>
+                  <ExternalLink className="w-4 h-4 text-[#D8CBB3]" />
                 </a>
               </div>
             </div>
 
-            {/* Reviews Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {reviews.map(review => (
-                <div
-                  key={review.id}
-                  className="bg-[#151f1f] border border-white/10 rounded-3xl p-8 hover:border-[#D8CBB3]/30 transition-all flex flex-col justify-between space-y-6"
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-12 h-12 rounded-full bg-[#D8CBB3]/15 border border-[#D8CBB3]/30 flex items-center justify-center text-[#D8CBB3] font-bold text-lg">
-                          {review.author_name.charAt(0)}
+            {/* Google Reviews Cards Grid */}
+            {reviews.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {reviews.map(review => (
+                  <div
+                    key={review.id}
+                    className="bg-[#151f1f] border border-white/10 rounded-3xl p-7 hover:border-[#D8CBB3]/30 transition-all flex flex-col justify-between space-y-5 shadow-xl"
+                  >
+                    <div className="space-y-3.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-[#D8CBB3]/15 border border-[#D8CBB3]/30 flex items-center justify-center text-[#D8CBB3] font-bold text-sm">
+                            {review.author_name.charAt(0)}
+                          </div>
+                          <div>
+                            <h4 className="text-[#FFFDF8] font-medium text-sm">{review.author_name}</h4>
+                            <span className="text-[11px] text-[#F6F3EC]/50 font-light">{review.relative_time_description}</span>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="text-[#FFFDF8] font-medium text-base">{review.author_name}</h4>
-                          <span className="text-xs text-[#F6F3EC]/50 font-light">{review.relative_time_description}</span>
+
+                        <div className="flex text-amber-400">
+                          {[...Array(review.rating)].map((_, i) => (
+                            <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                          ))}
                         </div>
                       </div>
 
-                      {/* Stars */}
-                      <div className="flex text-amber-400">
-                        {[...Array(review.rating)].map((_, i) => (
-                          <Star key={i} className="w-4 h-4 fill-amber-400" />
-                        ))}
-                      </div>
+                      <p className="text-[#F6F3EC]/80 text-xs font-light leading-relaxed italic">
+                        "{review.text}"
+                      </p>
                     </div>
 
-                    <p className="text-[#F6F3EC]/80 text-sm font-light leading-relaxed italic">
-                      "{review.text}"
-                    </p>
-                  </div>
-
-                  <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                    <span className="text-xs text-[#D8CBB3] font-medium">
-                      {review.service_type || 'Atendimento Jurídico'}
-                    </span>
-                    {review.is_verified && (
+                    <div className="pt-3 border-t border-white/5 flex items-center justify-between">
                       <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Cliente Verificado
+                        <CheckCircle2 className="w-3 h-3" />
+                        Cliente Verificado Google
                       </span>
-                    )}
+
+                      <a
+                        href={googleReviewsLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] text-[#D8CBB3] hover:underline flex items-center gap-1"
+                      >
+                        Ver no Google
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* Modal: Full Article Reading */}
         {selectedArticle && (
-          <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-            <div className="bg-[#151f1f] border border-[#D8CBB3]/30 rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-fadeIn">
+          <div 
+            onClick={() => setSelectedArticle(null)}
+            className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 cursor-pointer animate-fadeIn"
+          >
+            <div 
+              onClick={e => e.stopPropagation()}
+              className="bg-[#151f1f] border border-[#D8CBB3]/30 rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden cursor-default"
+            >
               <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#101616]">
                 <span className="text-xs font-semibold text-[#D8CBB3] uppercase tracking-wider">
                   {selectedArticle.category}
                 </span>
                 <button
                   onClick={() => setSelectedArticle(null)}
-                  className="p-1.5 hover:bg-white/10 rounded-full text-white"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white text-xs font-medium transition-colors cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <span>Fechar</span>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -407,20 +408,18 @@ export const ContentSection: React.FC = () => {
                 </div>
 
                 <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="flex flex-wrap gap-2">
-                    {selectedArticle.tags?.map(t => (
-                      <span key={t} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-[#D8CBB3]">
-                        #{t}
-                      </span>
-                    ))}
-                  </div>
-
+                  <button
+                    onClick={() => setSelectedArticle(null)}
+                    className="px-5 py-3 border border-white/10 hover:bg-white/5 rounded-xl text-xs uppercase tracking-wider text-[#F6F3EC] cursor-pointer"
+                  >
+                    Fechar
+                  </button>
                   <a
                     href="#contato"
                     onClick={() => setSelectedArticle(null)}
                     className="px-6 py-3 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider hover:bg-[#FFFDF8] transition-all"
                   >
-                    Consultar Especialista
+                    Fale com o Escritório
                   </a>
                 </div>
               </div>
@@ -428,40 +427,53 @@ export const ContentSection: React.FC = () => {
           </div>
         )}
 
-        {/* Modal: Video Player */}
+        {/* Modal: Video Player with Prominent Red Close Button */}
         {activeVideoModal && (
-          <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-            <div className="bg-[#151f1f] border border-[#D8CBB3]/30 rounded-3xl max-w-4xl w-full flex flex-col shadow-2xl overflow-hidden animate-fadeIn">
-              <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#101616]">
-                <h3 className="text-sm font-medium text-[#FFFDF8] line-clamp-1">{activeVideoModal.title}</h3>
+          <div 
+            onClick={() => setActiveVideoModal(null)}
+            className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 cursor-pointer animate-fadeIn"
+          >
+            <div 
+              onClick={e => e.stopPropagation()}
+              className="bg-[#151f1f] border border-[#D8CBB3]/40 rounded-3xl max-w-4xl w-full flex flex-col shadow-2xl overflow-hidden cursor-default relative"
+            >
+              <div className="p-4 md:p-5 border-b border-white/10 flex justify-between items-center bg-[#101616]">
+                <div className="flex items-center gap-3">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#D8CBB3]" />
+                  <h3 className="text-sm md:text-base font-serif text-[#FFFDF8] line-clamp-1">
+                    {activeVideoModal.title || 'Vídeo Institucional'}
+                  </h3>
+                </div>
+                
                 <button
                   onClick={() => setActiveVideoModal(null)}
-                  className="p-1.5 hover:bg-white/10 rounded-full text-white"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500 hover:text-white transition-all text-xs font-semibold uppercase tracking-wider shadow-lg shrink-0 cursor-pointer"
+                  aria-label="Fechar Vídeo"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
+                  <span>Fechar Vídeo</span>
                 </button>
               </div>
 
-              <div className="aspect-video w-full bg-black">
+              <div className="aspect-video w-full bg-black relative">
                 <iframe
                   src={activeVideoModal.video_url}
                   title={activeVideoModal.title}
-                  className="w-full h-full"
+                  className="w-full h-full border-0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
               </div>
 
-              <div className="p-6 bg-[#151f1f] flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="p-5 md:p-6 bg-[#151f1f] flex items-center justify-between gap-4 border-t border-white/10">
                 <p className="text-xs text-[#F6F3EC]/70 line-clamp-2">{activeVideoModal.description}</p>
-                <a
-                  href={activeVideoModal.cta_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-6 py-3 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider transition-all shrink-0"
+                
+                <button
+                  onClick={() => setActiveVideoModal(null)}
+                  className="px-6 py-2.5 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider transition-all shadow-md shrink-0 cursor-pointer"
                 >
-                  {activeVideoModal.cta_text}
-                </a>
+                  Fechar Vídeo
+                </button>
               </div>
             </div>
           </div>

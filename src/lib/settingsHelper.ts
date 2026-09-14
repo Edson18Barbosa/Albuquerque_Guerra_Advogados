@@ -31,9 +31,11 @@ export interface SiteSettings {
   contact_phone: string;
   contact_whatsapp: string;
   contact_email: string;
+  contact_notification_email: string; // E-mail que recebe os formulários do site
   contact_address: string;
   contact_hours: string;
   contact_maps_url: string;
+  google_reviews_url: string; // Link oficial das avaliações no Google
   
   // SEO e redes sociais
   seo_title: string;
@@ -71,9 +73,11 @@ export const defaultSettings: SiteSettings = {
   contact_phone: '+55 (81) 3034-9988',
   contact_whatsapp: '+55 (81) 99988-7766',
   contact_email: 'contato@albuquerqueguerra.adv.br',
+  contact_notification_email: 'contato@albuquerqueguerra.adv.br',
   contact_address: 'Rua Arnóbio Marques, 253, sala 1703, Empresarial Camilo Brito, Santo Amaro, Recife - PE, CEP 50.100-130.',
   contact_hours: 'Segunda a Sexta, das 08h às 18h',
   contact_maps_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3950.0543789498263!2d-34.89115712415175!3d-8.112465381165683!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7ab1ef5bbba1b0b%3A0xe6ab1e2de66c80!2sAv.%20Eng.%20Domingos%20Ferreira%2C%20Recife%20-%20PE!5e0!3m2!1spt-BR!2sbr!4v1784767000000!5m2!1spt-BR!2sbr',
+  google_reviews_url: 'https://share.google/rHwBjzhN1Mp6eJvRo',
   
   seo_title: 'Albuquerque Guerra Advogados | Advocacia Estratégica',
   seo_description: 'Escritório de advocacia estratégica e contemporânea em Recife - PE. Especialistas em contencioso, consultoria trabalhista, cível e previdenciária de alta performance.',

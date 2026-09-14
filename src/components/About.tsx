@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Scale, CheckCircle2, Award, Sparkles } from 'lucide-react';
+import { Scale, CheckCircle2, Award, HeartHandshake } from 'lucide-react';
 import { getSiteSettings, SiteSettings } from '../lib/settingsHelper';
 import { getImageStyle } from '../lib/mediaHelper';
 import { Logo } from './Logo';
@@ -14,23 +14,23 @@ export const About: React.FC = () => {
   const indicators = [
     {
       title: 'Contencioso',
-      description: 'Rigour, strategy, and systematic procedural follow-up to achieve the most advantageous resolution.',
+      description: 'Rigor técnico, estratégia e acompanhamento processual sistemático para a melhor resolução.',
       icon: Scale,
     },
     {
       title: 'Consultivo',
-      description: 'Legal orientation for secure, predictable relations that generate positive impact.',
+      description: 'Orientação jurídica para relações seguras, previsíveis e com geração de valor real.',
       icon: Award,
     },
     {
       title: 'Prevenção',
-      description: 'Proactive risk mitigation and consequence analysis before relationships are established.',
+      description: 'Mitigação proativa de riscos e análise detalhada de cenários antes da celebração de negócios.',
       icon: CheckCircle2,
     },
     {
       title: 'Impacto Positivo',
-      description: 'Transforming legal practice into a positive force for business, people, and community.',
-      icon: Sparkles,
+      description: 'A advocacia estratégica como instrumento de transformação e segurança para negócios e pessoas.',
+      icon: HeartHandshake,
     },
   ];
 

@@ -1,73 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  BookOpen, Video, Star, Plus, Edit, Trash2,
-  CheckCircle2, AlertTriangle, X, ExternalLink, Flame, MessageSquare
+  BookOpen, Video, Star, Plus, Trash2, Edit2, ExternalLink, 
+  CheckCircle2, X, AlertTriangle, Eye, Link as LinkIcon, Play, Save
 } from 'lucide-react';
 import { Article, VideoAd, GoogleReview } from '../../types/contents';
 import { 
-  getArticles, saveArticle, deleteArticle,
+  getArticles, saveArticle, deleteArticle, 
   getVideoAds, saveVideoAd, deleteVideoAd,
   getGoogleReviews, saveGoogleReview, deleteGoogleReview
 } from '../../lib/contentsHelper';
+import { getSiteSettings, saveSiteSettings, SiteSettings } from '../../lib/settingsHelper';
 
 export const AdminContents: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'articles' | 'videos' | 'reviews'>('articles');
+  const [activeTab, setActiveTab] = useState<'articles' | 'videos' | 'google_link'>('articles');
   const [articles, setArticles] = useState<Article[]>([]);
   const [videos, setVideos] = useState<VideoAd[]>([]);
   const [reviews, setReviews] = useState<GoogleReview[]>([]);
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error' | null, text: string }>({ type: null, text: '' });
-  const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  
+  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error' | null; text: string }>({ type: null, text: '' });
+  const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+  const [editingVideo, setEditingVideo] = useState<VideoAd | null>(null);
+  const [editingReview, setEditingReview] = useState<GoogleReview | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [articleModalOpen, setArticleModalOpen] = useState(false);
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-  const [articleForm, setArticleForm] = useState<Partial<Article>>({
-    title: '',
-    slug: '',
-    summary: '',
-    content: '',
-    category: 'Artigo Jurídico',
-    author: 'Dr. João Guerra',
-    published_date: new Date().toISOString().split('T')[0],
-    cover_image: '/about-office.png',
-    reading_time: '4 min',
-    tags: ['Direito Civil'],
-    is_featured: false,
-    is_active: true,
-    status: 'Publicado'
-  });
+  const [googleUrl, setGoogleUrl] = useState('https://share.google/rHwBjzhN1Mp6eJvRo');
 
-  const [videoModalOpen, setVideoModalOpen] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState<VideoAd | null>(null);
-  const [videoForm, setVideoForm] = useState<Partial<VideoAd>>({
-    title: '',
-    description: '',
-    video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    thumbnail_url: '/joao-guerra.jpg',
-    target_campaign: 'Campanha 2026',
-    cta_text: 'Falar no WhatsApp',
-    cta_link: 'https://wa.me/5581999999999',
-    platform: 'YouTube',
-    is_active: true,
-    is_featured: false,
-    views_count: '1.2k visualizações'
-  });
-
-  const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [selectedReview, setSelectedReview] = useState<GoogleReview | null>(null);
-  const [reviewForm, setReviewForm] = useState<Partial<GoogleReview>>({
-    author_name: '',
-    author_avatar: '',
-    rating: 5,
-    relative_time_description: 'há poucos dias',
-    text: '',
-    service_type: 'Direito Empresarial',
-    is_verified: true,
-    review_link: 'https://maps.google.com',
-    is_active: true
-  });
-
-  const fetchAll = async () => {
-    setLoading(true);
+  const loadAll = async () => {
     try {
       const [arts, vids, revs] = await Promise.all([
         getArticles(),
@@ -77,200 +36,122 @@ export const AdminContents: React.FC = () => {
       setArticles(arts);
       setVideos(vids);
       setReviews(revs);
+      const siteSet = getSiteSettings();
+      setSettings(siteSet);
+      if (siteSet?.google_reviews_url) {
+        setGoogleUrl(siteSet.google_reviews_url);
+      }
     } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+      console.warn('Error loading contents in admin:', e);
     }
   };
 
   useEffect(() => {
-    fetchAll();
+    loadAll();
   }, []);
 
-  const showFeedback = (type: 'success' | 'error', text: string) => {
+  const notify = (type: 'success' | 'error', text: string) => {
     setStatusMsg({ type, text });
-    setTimeout(() => setStatusMsg({ type: null, text: '' }), 4000);
+    setTimeout(() => setStatusMsg({ type: null, text: '' }), 5000);
   };
 
-  const handleOpenAddArticle = () => {
-    setSelectedArticle(null);
-    setArticleForm({
-      title: '',
-      slug: '',
-      summary: '',
-      content: '',
-      category: 'Artigo Jurídico',
-      author: 'Dr. João Guerra',
-      published_date: new Date().toISOString().split('T')[0],
-      cover_image: '/about-office.png',
-      reading_time: '4 min',
-      tags: ['Direito Civil'],
-      is_featured: false,
-      is_active: true,
-      status: 'Publicado'
-    });
-    setArticleModalOpen(true);
-  };
-
-  const handleOpenEditArticle = (art: Article) => {
-    setSelectedArticle(art);
-    setArticleForm({ ...art });
-    setArticleModalOpen(true);
-  };
-
+  // Article save
   const handleSaveArticle = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!articleForm.title || !articleForm.content) {
-      showFeedback('error', 'Título e Conteúdo são obrigatórios.');
-      return;
+    if (!editingArticle) return;
+    try {
+      await saveArticle(editingArticle);
+      await loadAll();
+      setEditingArticle(null);
+      notify('success', 'Artigo salvo com sucesso!');
+    } catch (err: any) {
+      notify('error', 'Erro ao salvar artigo: ' + err.message);
     }
-
-    const payload: Article = {
-      id: selectedArticle ? selectedArticle.id : 'art-' + Date.now(),
-      title: articleForm.title || '',
-      slug: (articleForm.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      summary: articleForm.summary || '',
-      content: articleForm.content || '',
-      category: (articleForm.category as any) || 'Artigo Jurídico',
-      author: articleForm.author || 'Dr. João Guerra',
-      published_date: articleForm.published_date || new Date().toISOString().split('T')[0],
-      cover_image: articleForm.cover_image || '/about-office.png',
-      reading_time: articleForm.reading_time || '4 min',
-      tags: Array.isArray(articleForm.tags) ? articleForm.tags : [(articleForm.tags as any) || 'Geral'],
-      is_featured: Boolean(articleForm.is_featured),
-      is_active: articleForm.is_active !== undefined ? articleForm.is_active : true,
-      status: (articleForm.status as any) || 'Publicado',
-      created_at: selectedArticle ? selectedArticle.created_at : new Date().toISOString()
-    };
-
-    await saveArticle(payload);
-    showFeedback('success', 'Artigo salvo com sucesso!');
-    setArticleModalOpen(false);
-    fetchAll();
   };
 
-  const handleDeleteArticle = async (id: string, title: string) => {
-    if (!confirm(`Deseja realmente excluir o artigo "${title}"?`)) return;
-    await deleteArticle(id);
-    showFeedback('success', 'Artigo excluído.');
-    fetchAll();
+  const handleDeleteArticle = async (id: string) => {
+    if (!confirm('Deseja excluir este artigo?')) return;
+    try {
+      await deleteArticle(id);
+      await loadAll();
+      notify('success', 'Artigo excluído com sucesso.');
+    } catch (err: any) {
+      notify('error', 'Erro ao excluir artigo: ' + err.message);
+    }
   };
 
-  const handleOpenAddVideo = () => {
-    setSelectedVideo(null);
-    setVideoForm({
-      title: '',
-      description: '',
-      video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-      thumbnail_url: '/joao-guerra.jpg',
-      target_campaign: 'Campanha 2026',
-      cta_text: 'Falar no WhatsApp',
-      cta_link: 'https://wa.me/5581999999999',
-      platform: 'YouTube',
-      is_active: true,
-      is_featured: false,
-      views_count: '1.2k visualizações'
-    });
-    setVideoModalOpen(true);
-  };
-
-  const handleOpenEditVideo = (vid: VideoAd) => {
-    setSelectedVideo(vid);
-    setVideoForm({ ...vid });
-    setVideoModalOpen(true);
-  };
-
+  // Video save
   const handleSaveVideo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!videoForm.title || !videoForm.video_url) {
-      showFeedback('error', 'Título e URL do Vídeo são obrigatórios.');
+    if (!editingVideo) return;
+    if (!editingVideo.video_url || !editingVideo.video_url.trim()) {
+      notify('error', 'Por favor, informe o link do vídeo.');
       return;
     }
-
-    const payload: VideoAd = {
-      id: selectedVideo ? selectedVideo.id : 'vid-' + Date.now(),
-      title: videoForm.title || '',
-      description: videoForm.description || '',
-      video_url: videoForm.video_url || '',
-      thumbnail_url: videoForm.thumbnail_url || '/joao-guerra.jpg',
-      target_campaign: videoForm.target_campaign || 'Campanha Ads',
-      cta_text: videoForm.cta_text || 'Falar no WhatsApp',
-      cta_link: videoForm.cta_link || 'https://wa.me/5581999999999',
-      platform: (videoForm.platform as any) || 'YouTube',
-      is_active: videoForm.is_active !== undefined ? videoForm.is_active : true,
-      is_featured: Boolean(videoForm.is_featured),
-      views_count: videoForm.views_count || '1.0k visualizações',
-      created_at: selectedVideo ? selectedVideo.created_at : new Date().toISOString()
-    };
-
-    await saveVideoAd(payload);
-    showFeedback('success', 'Vídeo / Campanha salvo com sucesso!');
-    setVideoModalOpen(false);
-    fetchAll();
+    try {
+      await saveVideoAd(editingVideo);
+      await loadAll();
+      setEditingVideo(null);
+      notify('success', 'Vídeo salvo com sucesso! Ele agora aparecerá na aba de vídeos do site.');
+    } catch (err: any) {
+      notify('error', 'Erro ao salvar vídeo: ' + err.message);
+    }
   };
 
-  const handleDeleteVideo = async (id: string, title: string) => {
-    if (!confirm(`Deseja realmente excluir o vídeo "${title}"?`)) return;
-    await deleteVideoAd(id);
-    showFeedback('success', 'Vídeo excluído.');
-    fetchAll();
+  const handleDeleteVideo = async (id: string) => {
+    if (!confirm('Deseja excluir este vídeo?')) return;
+    try {
+      await deleteVideoAd(id);
+      await loadAll();
+      notify('success', 'Vídeo removido. Se não houver outros vídeos, a aba ficará oculta no site.');
+    } catch (err: any) {
+      notify('error', 'Erro ao excluir vídeo: ' + err.message);
+    }
   };
 
-  const handleOpenAddReview = () => {
-    setSelectedReview(null);
-    setReviewForm({
-      author_name: '',
-      author_avatar: '',
-      rating: 5,
-      relative_time_description: 'há poucos dias',
-      text: '',
-      service_type: 'Direito Empresarial',
-      is_verified: true,
-      review_link: 'https://maps.google.com',
-      is_active: true
-    });
-    setReviewModalOpen(true);
-  };
-
-  const handleOpenEditReview = (rev: GoogleReview) => {
-    setSelectedReview(rev);
-    setReviewForm({ ...rev });
-    setReviewModalOpen(true);
-  };
-
+  // Google Review save
   const handleSaveReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reviewForm.author_name || !reviewForm.text) {
-      showFeedback('error', 'Nome do autor e depoimento são obrigatórios.');
-      return;
+    if (!editingReview) return;
+    try {
+      await saveGoogleReview(editingReview);
+      await loadAll();
+      setEditingReview(null);
+      notify('success', 'Avaliação do Google salva com sucesso!');
+    } catch (err: any) {
+      notify('error', 'Erro ao salvar avaliação: ' + err.message);
     }
-
-    const payload: GoogleReview = {
-      id: selectedReview ? selectedReview.id : 'rev-' + Date.now(),
-      author_name: reviewForm.author_name || '',
-      author_avatar: reviewForm.author_avatar || '',
-      rating: Number(reviewForm.rating) || 5,
-      relative_time_description: reviewForm.relative_time_description || 'recentemente',
-      text: reviewForm.text || '',
-      service_type: reviewForm.service_type || 'Atendimento Jurídico',
-      is_verified: reviewForm.is_verified !== undefined ? reviewForm.is_verified : true,
-      review_link: reviewForm.review_link || 'https://maps.google.com',
-      is_active: reviewForm.is_active !== undefined ? reviewForm.is_active : true,
-      created_at: selectedReview ? selectedReview.created_at : new Date().toISOString()
-    };
-
-    await saveGoogleReview(payload);
-    showFeedback('success', 'Avaliação do Google salva com sucesso!');
-    setReviewModalOpen(false);
-    fetchAll();
   };
 
-  const handleDeleteReview = async (id: string, name: string) => {
-    if (!confirm(`Deseja realmente excluir a avaliação de "${name}"?`)) return;
-    await deleteGoogleReview(id);
-    showFeedback('success', 'Avaliação excluída.');
-    fetchAll();
+  const handleDeleteReview = async (id: string) => {
+    if (!confirm('Deseja excluir esta avaliação?')) return;
+    try {
+      await deleteGoogleReview(id);
+      await loadAll();
+      notify('success', 'Avaliação removida.');
+    } catch (err: any) {
+      notify('error', 'Erro ao excluir avaliação: ' + err.message);
+    }
+  };
+
+  // Google reviews link save
+  const handleSaveGoogleLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!settings) return;
+    setIsSaving(true);
+    try {
+      const updatedSettings = {
+        ...settings,
+        google_reviews_url: googleUrl.trim()
+      };
+      await saveSiteSettings(updatedSettings);
+      setSettings(updatedSettings);
+      notify('success', 'Link oficial das avaliações do Google salvo com sucesso!');
+    } catch (err: any) {
+      notify('error', 'Erro ao salvar link do Google: ' + err.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -289,556 +170,558 @@ export const AdminContents: React.FC = () => {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Header & Tabs */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif text-[#FFFDF8] mb-2 font-light">Conteúdos, Vídeos Ads & Avaliações</h1>
-          <p className="text-[#F6F3EC]/70">Gerencie artigos informativos, vídeos de campanhas de tráfego pago e avaliações do Google.</p>
+          <h1 className="text-3xl font-serif text-[#FFFDF8] mb-2 font-light">Gerenciar Conteúdos & Mídias</h1>
+          <p className="text-[#F6F3EC]/70">Gerencie artigos, links de vídeos e as avaliações oficiais do Google.</p>
         </div>
 
-        {activeTab === 'articles' && (
+        <div className="flex flex-wrap gap-2 bg-[#151f1f] p-1.5 rounded-xl border border-white/10">
           <button
-            onClick={handleOpenAddArticle}
-            className="flex items-center gap-2 px-6 py-3 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl hover:bg-[#FFFDF8] transition-all shadow-lg shrink-0"
+            onClick={() => { setActiveTab('articles'); setEditingArticle(null); setEditingVideo(null); setEditingReview(null); }}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              activeTab === 'articles' ? 'bg-[#D8CBB3] text-[#101616]' : 'text-[#F6F3EC]/70 hover:text-white'
+            }`}
           >
-            <Plus className="w-5 h-5" />
-            Novo Artigo / Publicação
+            <BookOpen className="w-4 h-4" />
+            Artigos ({articles.length})
           </button>
-        )}
 
-        {activeTab === 'videos' && (
           <button
-            onClick={handleOpenAddVideo}
-            className="flex items-center gap-2 px-6 py-3 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl hover:bg-[#FFFDF8] transition-all shadow-lg shrink-0"
+            onClick={() => { setActiveTab('videos'); setEditingArticle(null); setEditingVideo(null); setEditingReview(null); }}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              activeTab === 'videos' ? 'bg-[#D8CBB3] text-[#101616]' : 'text-[#F6F3EC]/70 hover:text-white'
+            }`}
           >
-            <Plus className="w-5 h-5" />
-            Novo Vídeo / Campanha Ads
+            <Video className="w-4 h-4" />
+            Vídeos ({videos.length})
           </button>
-        )}
 
-        {activeTab === 'reviews' && (
           <button
-            onClick={handleOpenAddReview}
-            className="flex items-center gap-2 px-6 py-3 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl hover:bg-[#FFFDF8] transition-all shadow-lg shrink-0"
+            onClick={() => { setActiveTab('google_link'); setEditingArticle(null); setEditingVideo(null); setEditingReview(null); }}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              activeTab === 'google_link' ? 'bg-[#D8CBB3] text-[#101616]' : 'text-[#F6F3EC]/70 hover:text-white'
+            }`}
           >
-            <Plus className="w-5 h-5" />
-            Nova Avaliação Google
+            <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+            Avaliações Google ({reviews.length})
           </button>
-        )}
+        </div>
       </div>
 
-      <div className="flex gap-2 border-b border-white/10 pb-4">
-        <button
-          onClick={() => setActiveTab('articles')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            activeTab === 'articles'
-              ? 'bg-[#D8CBB3] text-[#101616] font-semibold'
-              : 'text-[#F6F3EC]/70 hover:bg-white/5 hover:text-white'
-          }`}
-        >
-          <BookOpen className="w-4 h-4" />
-          Artigos & Publicações ({articles.length})
-        </button>
-
-        <button
-          onClick={() => setActiveTab('videos')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            activeTab === 'videos'
-              ? 'bg-[#D8CBB3] text-[#101616] font-semibold'
-              : 'text-[#F6F3EC]/70 hover:bg-white/5 hover:text-white'
-          }`}
-        >
-          <Video className="w-4 h-4" />
-          Vídeos & Campanhas Ads ({videos.length})
-        </button>
-
-        <button
-          onClick={() => setActiveTab('reviews')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            activeTab === 'reviews'
-              ? 'bg-[#D8CBB3] text-[#101616] font-semibold'
-              : 'text-[#F6F3EC]/70 hover:bg-white/5 hover:text-white'
-          }`}
-        >
-          <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-          Avaliações Google ({reviews.length})
-        </button>
-      </div>
-
+      {/* ================= TAB 1: ARTIGOS ================= */}
       {activeTab === 'articles' && (
-        <div className="bg-[#151f1f] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/10 bg-white/5">
-                  <th className="p-4 text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider">Título & Capa</th>
-                  <th className="p-4 text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider">Categoria</th>
-                  <th className="p-4 text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider">Autor</th>
-                  <th className="p-4 text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider">Data</th>
-                  <th className="p-4 text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider">Status</th>
-                  <th className="p-4 text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {articles.map(art => (
-                  <tr key={art.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <img src={art.cover_image || '/about-office.png'} alt="" className="w-12 h-10 object-cover rounded-lg bg-black" />
-                        <div>
-                          <div className="font-medium text-[#FFFDF8] flex items-center gap-2">
-                            {art.title}
-                            {art.is_featured && <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />}
-                          </div>
-                          <span className="text-xs text-[#F6F3EC]/50 font-light">{art.reading_time}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4 text-xs text-[#D8CBB3] font-medium">{art.category}</td>
-                    <td className="p-4 text-xs text-[#F6F3EC]/80">{art.author}</td>
-                    <td className="p-4 text-xs text-[#F6F3EC]/60">{new Date(art.published_date).toLocaleDateString('pt-BR')}</td>
-                    <td className="p-4">
-                      <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${
-                        art.status === 'Publicado' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                      }`}>
-                        {art.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => handleOpenEditArticle(art)} className="p-2 text-[#F6F3EC]/50 hover:text-[#D8CBB3] hover:bg-[#D8CBB3]/10 rounded-lg">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDeleteArticle(art.id, art.title)} className="p-2 text-[#F6F3EC]/50 hover:text-red-400 hover:bg-red-400/10 rounded-lg">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'videos' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {videos.map(vid => (
-            <div key={vid.id} className="bg-[#151f1f] border border-white/10 rounded-2xl p-6 flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-start">
-                  <span className="px-2.5 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] text-[#D8CBB3] font-semibold">
-                    {vid.platform}
-                  </span>
-                  <span className="text-xs text-[#D8CBB3]">{vid.target_campaign}</span>
-                </div>
-                <h3 className="font-serif text-[#FFFDF8] text-base font-medium">{vid.title}</h3>
-                <p className="text-xs text-[#F6F3EC]/70 line-clamp-2">{vid.description}</p>
-                <div className="p-2 bg-black/40 rounded-xl text-xs text-[#D8CBB3] flex items-center gap-2">
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  CTA: {vid.cta_text}
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                <a href={vid.cta_link} target="_blank" rel="noopener noreferrer" className="text-xs text-[#D8CBB3] hover:underline flex items-center gap-1">
-                  Testar link Ads <ExternalLink className="w-3 h-3" />
-                </a>
-                <div className="flex gap-2">
-                  <button onClick={() => handleOpenEditVideo(vid)} className="p-1.5 text-[#F6F3EC]/50 hover:text-[#D8CBB3] rounded">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => handleDeleteVideo(vid.id, vid.title)} className="p-1.5 text-[#F6F3EC]/50 hover:text-red-400 rounded">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {activeTab === 'reviews' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {reviews.map(rev => (
-            <div key={rev.id} className="bg-[#151f1f] border border-white/10 rounded-2xl p-6 flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#D8CBB3]/20 text-[#D8CBB3] flex items-center justify-center font-bold">
-                      {rev.author_name.charAt(0)}
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-[#FFFDF8]">{rev.author_name}</h4>
-                      <span className="text-[11px] text-[#F6F3EC]/50">{rev.relative_time_description}</span>
-                    </div>
-                  </div>
-                  <div className="flex text-amber-400">
-                    {[...Array(rev.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-amber-400" />
-                    ))}
-                  </div>
-                </div>
-
-                <p className="text-xs text-[#F6F3EC]/80 italic">"{rev.text}"</p>
-                <div className="text-xs text-[#D8CBB3] font-medium">{rev.service_type}</div>
-              </div>
-
-              <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                <span className="text-[11px] text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Avaliação Verificada
-                </span>
-                <div className="flex gap-2">
-                  <button onClick={() => handleOpenEditReview(rev)} className="p-1.5 text-[#F6F3EC]/50 hover:text-[#D8CBB3] rounded">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => handleDeleteReview(rev.id, rev.author_name)} className="p-1.5 text-[#F6F3EC]/50 hover:text-red-400 rounded">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {articleModalOpen && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#151f1f] border border-[#D8CBB3]/30 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#101616]">
-              <h2 className="text-lg font-serif text-[#FFFDF8]">
-                {selectedArticle ? 'Editar Artigo / Publicação' : 'Adicionar Novo Artigo'}
-              </h2>
-              <button onClick={() => setArticleModalOpen(false)} className="p-1.5 hover:bg-white/10 rounded-full text-white">
-                <X className="w-5 h-5" />
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-serif text-[#FFFDF8]">Artigos e Publicações</h2>
+            {!editingArticle && (
+              <button
+                onClick={() => setEditingArticle({
+                  id: 'art-' + Date.now(),
+                  title: '',
+                  slug: '',
+                  summary: '',
+                  content: '',
+                  category: 'Artigo Jurídico',
+                  author: 'Dr. João Guerra',
+                  published_date: new Date().toISOString().split('T')[0],
+                  reading_time: '5 min',
+                  cover_image: '/event-innovation.png',
+                  tags: [],
+                  is_featured: false,
+                  is_active: true,
+                  status: 'Publicado',
+                  created_at: new Date().toISOString()
+                })}
+                className="px-4 py-2 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-[#FFFDF8] transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                Novo Artigo
               </button>
-            </div>
+            )}
+          </div>
 
-            <form onSubmit={handleSaveArticle} className="p-6 overflow-y-auto space-y-4 custom-scrollbar">
-              <div>
-                <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Título do Artigo</label>
-                <input
-                  type="text"
-                  value={articleForm.title}
-                  onChange={e => setArticleForm({ ...articleForm, title: e.target.value })}
-                  required
-                  placeholder="Ex: Planejamento Sucessório em 2026"
-                  className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                />
+          {editingArticle ? (
+            <form onSubmit={handleSaveArticle} className="bg-[#151f1f] p-8 border border-white/10 rounded-2xl space-y-6 max-w-4xl shadow-2xl">
+              <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                <h3 className="text-lg font-serif text-[#FFFDF8]">
+                  {articles.some(a => a.id === editingArticle.id) ? 'Editar Artigo' : 'Novo Artigo'}
+                </h3>
+                <button type="button" onClick={() => setEditingArticle(null)} className="p-1 hover:bg-white/10 rounded">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Categoria</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Título do Artigo *</label>
+                  <input
+                    type="text"
+                    value={editingArticle.title}
+                    onChange={(e) => setEditingArticle({ ...editingArticle, title: e.target.value })}
+                    required
+                    className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Autor *</label>
+                  <input
+                    type="text"
+                    value={editingArticle.author}
+                    onChange={(e) => setEditingArticle({ ...editingArticle, author: e.target.value })}
+                    required
+                    className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Categoria</label>
                   <select
-                    value={articleForm.category}
-                    onChange={e => setArticleForm({ ...articleForm, category: e.target.value as any })}
+                    value={editingArticle.category}
+                    onChange={(e) => setEditingArticle({ ...editingArticle, category: e.target.value as any })}
                     className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
                   >
                     <option value="Artigo Jurídico">Artigo Jurídico</option>
                     <option value="Publicação">Publicação</option>
                     <option value="Campanha">Campanha</option>
                     <option value="Notícia">Notícia</option>
-                    <option value="Informativo">Informativo</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Autor Responsável</label>
-                  <input
-                    type="text"
-                    value={articleForm.author}
-                    onChange={e => setArticleForm({ ...articleForm, author: e.target.value })}
-                    required
-                    placeholder="Dr. João Guerra"
-                    className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Data de Publicação</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Data de Publicação</label>
                   <input
                     type="date"
-                    value={articleForm.published_date}
-                    onChange={e => setArticleForm({ ...articleForm, published_date: e.target.value })}
+                    value={editingArticle.published_date}
+                    onChange={(e) => setEditingArticle({ ...editingArticle, published_date: e.target.value })}
                     className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Tempo de Leitura</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Tempo de Leitura</label>
                   <input
                     type="text"
-                    value={articleForm.reading_time}
-                    onChange={e => setArticleForm({ ...articleForm, reading_time: e.target.value })}
-                    placeholder="4 min"
+                    value={editingArticle.reading_time || '5 min'}
+                    onChange={(e) => setEditingArticle({ ...editingArticle, reading_time: e.target.value })}
+                    placeholder="Ex: 5 min"
                     className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">URL da Imagem de Capa</label>
-                <input
-                  type="text"
-                  value={articleForm.cover_image}
-                  onChange={e => setArticleForm({ ...articleForm, cover_image: e.target.value })}
-                  placeholder="/about-office.png ou link da imagem"
-                  className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Resumo</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Resumo / Subtítulo *</label>
                 <textarea
                   rows={2}
-                  value={articleForm.summary}
-                  onChange={e => setArticleForm({ ...articleForm, summary: e.target.value })}
-                  placeholder="Breve resumo do artigo..."
-                  className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
+                  value={editingArticle.summary}
+                  onChange={(e) => setEditingArticle({ ...editingArticle, summary: e.target.value })}
+                  required
+                  className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC] resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Conteúdo Completo</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Texto Completo do Artigo (aberto no pop-up) *</label>
                 <textarea
-                  rows={6}
-                  value={articleForm.content}
-                  onChange={e => setArticleForm({ ...articleForm, content: e.target.value })}
-                  placeholder="Texto integral do artigo..."
-                  className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
+                  rows={8}
+                  value={editingArticle.content}
+                  onChange={(e) => setEditingArticle({ ...editingArticle, content: e.target.value })}
+                  required
+                  placeholder="Escreva o texto completo do artigo..."
+                  className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC] leading-relaxed resize-y font-mono"
                 />
               </div>
 
-              <div className="flex items-center gap-6 pt-2">
-                <label className="flex items-center gap-2 text-sm text-[#F6F3EC]/80 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={articleForm.is_featured}
-                    onChange={e => setArticleForm({ ...articleForm, is_featured: e.target.checked })}
-                    className="accent-[#D8CBB3]"
-                  />
-                  Destacar Artigo
-                </label>
-
-                <label className="flex items-center gap-2 text-sm text-[#F6F3EC]/80 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={articleForm.status === 'Publicado'}
-                    onChange={e => setArticleForm({ ...articleForm, status: e.target.checked ? 'Publicado' : 'Rascunho' })}
-                    className="accent-[#D8CBB3]"
-                  />
-                  Publicado Imediatamente
-                </label>
-              </div>
-
-              <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
-                <button type="button" onClick={() => setArticleModalOpen(false)} className="px-4 py-2 hover:bg-white/5 rounded-xl text-xs">
+              <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setEditingArticle(null)}
+                  className="px-5 py-2.5 border border-white/10 hover:bg-white/5 rounded-xl text-xs uppercase"
+                >
                   Cancelar
                 </button>
-                <button type="submit" className="px-5 py-2 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs">
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase hover:bg-[#FFFDF8] transition-all shadow-lg"
+                >
                   Salvar Artigo
                 </button>
               </div>
             </form>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.map(art => (
+                <div key={art.id} className="bg-[#151f1f] border border-white/10 rounded-2xl p-6 flex flex-col justify-between space-y-4 shadow-xl">
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-semibold text-[#D8CBB3] uppercase">{art.category}</span>
+                    <h3 className="text-base font-serif text-[#FFFDF8] font-medium line-clamp-2">{art.title}</h3>
+                    <p className="text-xs text-[#F6F3EC]/60 line-clamp-2">{art.summary}</p>
+                  </div>
+                  <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                    <span className="text-xs text-[#F6F3EC]/50">{art.author}</span>
+                    <div className="flex gap-2">
+                      <button onClick={() => setEditingArticle(art)} className="p-2 hover:bg-white/10 text-[#D8CBB3] rounded-lg">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleDeleteArticle(art.id)} className="p-2 hover:bg-red-500/10 text-red-400 rounded-lg">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {videoModalOpen && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#151f1f] border border-[#D8CBB3]/30 rounded-3xl max-w-xl w-full flex flex-col shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#101616]">
-              <h2 className="text-lg font-serif text-[#FFFDF8]">
-                {selectedVideo ? 'Editar Vídeo / Campanha Ads' : 'Adicionar Vídeo de Campanha'}
-              </h2>
-              <button onClick={() => setVideoModalOpen(false)} className="p-1.5 hover:bg-white/10 rounded-full text-white">
-                <X className="w-5 h-5" />
-              </button>
+      {/* ================= TAB 2: VÍDEOS ================= */}
+      {activeTab === 'videos' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-serif text-[#FFFDF8]">Vídeos</h2>
+              <p className="text-xs text-[#F6F3EC]/60 mt-0.5">
+                Basta adicionar o link do vídeo (YouTube, Vimeo, etc.). A aba de vídeos só aparecerá no site se houver pelo menos 1 vídeo com link cadastrado.
+              </p>
             </div>
 
-            <form onSubmit={handleSaveVideo} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Título do Vídeo</label>
-                <input
-                  type="text"
-                  value={videoForm.title}
-                  onChange={e => setVideoForm({ ...videoForm, title: e.target.value })}
-                  required
-                  placeholder="Ex: Como funciona a Holding Familiar"
-                  className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                />
+            {!editingVideo && (
+              <button
+                onClick={() => setEditingVideo({
+                  id: 'vid-' + Date.now(),
+                  title: '',
+                  description: '',
+                  video_url: '',
+                  thumbnail_url: '/joao-guerra.jpg',
+                  target_campaign: 'Institucional',
+                  cta_text: 'Fale com o Escritório',
+                  cta_link: '#contato',
+                  platform: 'YouTube',
+                  is_active: true,
+                  is_featured: false,
+                  created_at: new Date().toISOString()
+                })}
+                className="px-4 py-2 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-[#FFFDF8] transition-all shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                Adicionar Vídeo
+              </button>
+            )}
+          </div>
+
+          {editingVideo ? (
+            <form onSubmit={handleSaveVideo} className="bg-[#151f1f] p-8 border border-white/10 rounded-2xl space-y-6 max-w-2xl shadow-2xl">
+              <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                <h3 className="text-lg font-serif text-[#FFFDF8]">
+                  {videos.some(v => v.id === editingVideo.id) ? 'Editar Vídeo' : 'Adicionar Novo Vídeo'}
+                </h3>
+                <button type="button" onClick={() => setEditingVideo(null)} className="p-1 hover:bg-white/10 rounded">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">URL do Vídeo (Embed / YouTube)</label>
-                <input
-                  type="text"
-                  value={videoForm.video_url}
-                  onChange={e => setVideoForm({ ...videoForm, video_url: e.target.value })}
-                  required
-                  placeholder="https://www.youtube.com/embed/..."
-                  className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Nome da Campanha</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-[#D8CBB3]">
+                    Link do Vídeo (YouTube, Vimeo ou Link Direto) *
+                  </label>
                   <input
                     type="text"
-                    value={videoForm.target_campaign}
-                    onChange={e => setVideoForm({ ...videoForm, target_campaign: e.target.value })}
-                    placeholder="Campanha Ads 2026"
+                    value={editingVideo.video_url}
+                    onChange={(e) => setEditingVideo({ ...editingVideo, video_url: e.target.value })}
+                    required
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className="w-full bg-[#101616] border border-[#D8CBB3]/40 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-[#D8CBB3] text-[#FFFDF8]"
+                  />
+                  <span className="text-[11px] text-[#F6F3EC]/50 mt-1 block">
+                    Aceita links normais do YouTube (ex: youtube.com/watch?v=..., youtu.be/... ou embed).
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-[#F6F3EC]/70">
+                    Título do Vídeo
+                  </label>
+                  <input
+                    type="text"
+                    value={editingVideo.title}
+                    onChange={(e) => setEditingVideo({ ...editingVideo, title: e.target.value })}
+                    placeholder="Ex: Planejamento Sucessório na Prática"
                     className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Plataforma</label>
-                  <select
-                    value={videoForm.platform}
-                    onChange={e => setVideoForm({ ...videoForm, platform: e.target.value as any })}
-                    className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                  >
-                    <option value="YouTube">YouTube</option>
-                    <option value="Google Ads">Google Ads</option>
-                    <option value="Meta Ads">Meta Ads</option>
-                    <option value="TikTok">TikTok</option>
-                  </select>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Texto do Botão CTA</label>
-                  <input
-                    type="text"
-                    value={videoForm.cta_text}
-                    onChange={e => setVideoForm({ ...videoForm, cta_text: e.target.value })}
-                    placeholder="Falar no WhatsApp"
-                    className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Link de Destino CTA</label>
-                  <input
-                    type="text"
-                    value={videoForm.cta_link}
-                    onChange={e => setVideoForm({ ...videoForm, cta_link: e.target.value })}
-                    placeholder="https://wa.me/..."
-                    className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5 text-[#F6F3EC]/70">
+                    Descrição Breve (Opcional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editingVideo.description}
+                    onChange={(e) => setEditingVideo({ ...editingVideo, description: e.target.value })}
+                    placeholder="Breve explicação sobre o tema do vídeo..."
+                    className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC] resize-none"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Descrição</label>
-                <textarea
-                  rows={2}
-                  value={videoForm.description}
-                  onChange={e => setVideoForm({ ...videoForm, description: e.target.value })}
-                  placeholder="Explicação sobre o vídeo..."
-                  className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
-                <button type="button" onClick={() => setVideoModalOpen(false)} className="px-4 py-2 hover:bg-white/5 rounded-xl text-xs">
+              <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setEditingVideo(null)}
+                  className="px-5 py-2.5 border border-white/10 hover:bg-white/5 rounded-xl text-xs uppercase"
+                >
                   Cancelar
                 </button>
-                <button type="submit" className="px-5 py-2 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs">
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase hover:bg-[#FFFDF8] transition-all shadow-lg"
+                >
                   Salvar Vídeo
                 </button>
               </div>
             </form>
-          </div>
+          ) : (
+            <div>
+              {videos.length === 0 ? (
+                <div className="bg-[#151f1f] border border-white/10 rounded-2xl p-10 text-center space-y-3">
+                  <Video className="w-12 h-12 text-[#D8CBB3]/40 mx-auto" />
+                  <h3 className="text-xl font-serif text-[#FFFDF8]">Nenhum vídeo cadastrado</h3>
+                  <p className="text-xs text-[#F6F3EC]/60 max-w-md mx-auto">
+                    A aba de vídeos na página inicial está oculta no momento. Clique em <strong>"Adicionar Vídeo"</strong> e cole o link do seu vídeo para exibi-la.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {videos.map(vid => (
+                    <div key={vid.id} className="bg-[#151f1f] border border-white/10 rounded-2xl p-6 flex flex-col justify-between space-y-4 shadow-xl">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs text-[#D8CBB3]">
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                          <span>Vídeo Cadastrado</span>
+                        </div>
+                        <h3 className="text-base font-serif text-[#FFFDF8] font-medium">{vid.title || 'Vídeo sem título'}</h3>
+                        <p className="text-xs text-[#F6F3EC]/60 line-clamp-2">{vid.description || vid.video_url}</p>
+                      </div>
+                      <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+                        <a
+                          href={vid.video_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-[#D8CBB3] hover:underline flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Ver link
+                        </a>
+                        <div className="flex gap-2">
+                          <button onClick={() => setEditingVideo(vid)} className="p-2 hover:bg-white/10 text-[#D8CBB3] rounded-lg">
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDeleteVideo(vid.id)} className="p-2 hover:bg-red-500/10 text-red-400 rounded-lg">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {reviewModalOpen && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#151f1f] border border-[#D8CBB3]/30 rounded-3xl max-w-md w-full flex flex-col shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#101616]">
-              <h2 className="text-lg font-serif text-[#FFFDF8]">
-                {selectedReview ? 'Editar Avaliação do Google' : 'Adicionar Avaliação do Google'}
-              </h2>
-              <button onClick={() => setReviewModalOpen(false)} className="p-1.5 hover:bg-white/10 rounded-full text-white">
-                <X className="w-5 h-5" />
-              </button>
+      {/* ================= TAB 3: LINK OFICIAL GOOGLE REVIEWS & AVALIAÇÕES ================= */}
+      {activeTab === 'google_link' && (
+        <div className="space-y-8 max-w-4xl">
+          {/* Official Google Link Config Card */}
+          <form onSubmit={handleSaveGoogleLink} className="bg-[#151f1f] p-8 border border-white/10 rounded-2xl space-y-6 shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center p-2 shadow-md">
+                <svg className="w-6 h-6" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-serif text-[#FFFDF8]">Link Oficial das Avaliações no Google</h3>
+                <p className="text-xs text-[#F6F3EC]/60">Configure o link oficial do Google Maps onde seus clientes deixam e leem avaliações</p>
+              </div>
             </div>
 
-            <form onSubmit={handleSaveReview} className="p-6 space-y-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Nome do Cliente</label>
-                <input
-                  type="text"
-                  value={reviewForm.author_name}
-                  onChange={e => setReviewForm({ ...reviewForm, author_name: e.target.value })}
-                  required
-                  placeholder="Nome do cliente"
-                  className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                />
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-[#D8CBB3]">
+                  URL / Link de Compartilhamento do Google *
+                </label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#F6F3EC]/40" />
+                    <input
+                      type="url"
+                      value={googleUrl}
+                      onChange={(e) => setGoogleUrl(e.target.value)}
+                      required
+                      placeholder="https://share.google/rHwBjzhN1Mp6eJvRo"
+                      className="w-full bg-[#101616] border border-[#D8CBB3]/40 rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-[#D8CBB3] text-[#FFFDF8] font-mono"
+                    />
+                  </div>
+                  <a
+                    href={googleUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs flex items-center gap-1.5 text-[#FFFDF8]"
+                    title="Testar Link no Google"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Testar Link</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4 border-t border-white/10">
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="px-8 py-3.5 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg cursor-pointer"
+              >
+                {isSaving ? 'Salvando...' : 'Salvar Link do Google'}
+              </button>
+            </div>
+          </form>
+
+          {/* Reviews List & Add Form */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-serif text-[#FFFDF8]">Depoimentos do Google em Destaque</h3>
+                <p className="text-xs text-[#F6F3EC]/60">Cadastre ou edite as avaliações dos clientes recebidas no Google</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Nota (Estrelas)</label>
-                  <select
-                    value={reviewForm.rating}
-                    onChange={e => setReviewForm({ ...reviewForm, rating: Number(e.target.value) })}
-                    className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                  >
-                    <option value={5}>⭐⭐⭐⭐⭐ 5 Estrelas</option>
-                    <option value={4}>⭐⭐⭐⭐ 4 Estrelas</option>
-                  </select>
+              {!editingReview && (
+                <button
+                  onClick={() => setEditingReview({
+                    id: 'rev-' + Date.now(),
+                    author_name: '',
+                    rating: 5,
+                    relative_time_description: 'recente',
+                    text: '',
+                    service_type: 'Atendimento Jurídico',
+                    is_verified: true,
+                    is_active: true,
+                    created_at: new Date().toISOString()
+                  })}
+                  className="px-4 py-2 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-[#FFFDF8] transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Cadastrar Avaliação
+                </button>
+              )}
+            </div>
+
+            {editingReview ? (
+              <form onSubmit={handleSaveReview} className="bg-[#151f1f] p-8 border border-white/10 rounded-2xl space-y-4 shadow-xl">
+                <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                  <h4 className="font-serif text-[#FFFDF8]">
+                    {reviews.some(r => r.id === editingReview.id) ? 'Editar Avaliação' : 'Nova Avaliação'}
+                  </h4>
+                  <button type="button" onClick={() => setEditingReview(null)} className="p-1 hover:bg-white/10 rounded">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Nome do Cliente *</label>
+                    <input
+                      type="text"
+                      value={editingReview.author_name}
+                      onChange={(e) => setEditingReview({ ...editingReview, author_name: e.target.value })}
+                      required
+                      placeholder="Ex: Carlos Eduardo"
+                      className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Classificação em Estrelas</label>
+                    <select
+                      value={editingReview.rating}
+                      onChange={(e) => setEditingReview({ ...editingReview, rating: Number(e.target.value) })}
+                      className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
+                    >
+                      <option value="5">5 Estrelas (⭐⭐⭐⭐⭐)</option>
+                      <option value="4">4 Estrelas (⭐⭐⭐⭐)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Período / Tempo</label>
+                    <input
+                      type="text"
+                      value={editingReview.relative_time_description}
+                      onChange={(e) => setEditingReview({ ...editingReview, relative_time_description: e.target.value })}
+                      placeholder="Ex: há 2 semanas"
+                      className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Tempo Relativo</label>
-                  <input
-                    type="text"
-                    value={reviewForm.relative_time_description}
-                    onChange={e => setReviewForm({ ...reviewForm, relative_time_description: e.target.value })}
-                    placeholder="Ex: há 2 semanas"
-                    className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Texto da Avaliação *</label>
+                  <textarea
+                    rows={3}
+                    value={editingReview.text}
+                    onChange={(e) => setEditingReview({ ...editingReview, text: e.target.value })}
+                    required
+                    placeholder="Copie ou digite o depoimento do cliente..."
+                    className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC] resize-none"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Serviço Jurídico Prestado</label>
-                <input
-                  type="text"
-                  value={reviewForm.service_type}
-                  onChange={e => setReviewForm({ ...reviewForm, service_type: e.target.value })}
-                  placeholder="Ex: Planejamento Sucessório & Holding"
-                  className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                />
+                <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+                  <button type="button" onClick={() => setEditingReview(null)} className="px-4 py-2 hover:bg-white/5 rounded-xl text-xs">
+                    Cancelar
+                  </button>
+                  <button type="submit" className="px-6 py-2.5 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs hover:bg-[#FFFDF8]">
+                    Salvar Avaliação
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {reviews.map(rev => (
+                  <div key={rev.id} className="bg-[#151f1f] border border-white/10 rounded-2xl p-5 flex flex-col justify-between space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-sm font-medium text-[#FFFDF8]">{rev.author_name}</h4>
+                        <div className="flex text-amber-400">
+                          {[...Array(rev.rating)].map((_, i) => (
+                            <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-xs text-[#F6F3EC]/70 italic line-clamp-3">"{rev.text}"</p>
+                    </div>
+                    <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                      <span className="text-[11px] text-[#D8CBB3]">{rev.relative_time_description}</span>
+                      <div className="flex gap-2">
+                        <button onClick={() => setEditingReview(rev)} className="p-1.5 hover:bg-white/10 text-[#D8CBB3] rounded">
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleDeleteReview(rev.id)} className="p-1.5 hover:bg-red-500/10 text-red-400 rounded">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1">Depoimento do Cliente</label>
-                <textarea
-                  rows={4}
-                  value={reviewForm.text}
-                  onChange={e => setReviewForm({ ...reviewForm, text: e.target.value })}
-                  required
-                  placeholder="Texto do comentário no Google..."
-                  className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
-                <button type="button" onClick={() => setReviewModalOpen(false)} className="px-4 py-2 hover:bg-white/5 rounded-xl text-xs">
-                  Cancelar
-                </button>
-                <button type="submit" className="px-5 py-2 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs">
-                  Salvar Avaliação
-                </button>
-              </div>
-            </form>
+            )}
           </div>
         </div>
       )}

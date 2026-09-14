@@ -8,6 +8,7 @@ export const Contact: React.FC = () => {
   useEffect(() => {
     setSettings(getSiteSettings());
   }, []);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -31,6 +32,29 @@ export const Contact: React.FC = () => {
       return;
     }
     setError('');
+
+    // Save lead submission locally with the dynamically configured notification email
+    try {
+      const destinationEmail = (settings && (settings.contact_notification_email || settings.contact_email)) || 'contato@albuquerqueguerra.adv.br';
+      const newSubmission = {
+        id: 'msg-' + Date.now(),
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        area: formData.area,
+        message: formData.message,
+        sent_to_email: destinationEmail,
+        created_at: new Date().toISOString()
+      };
+
+      const existing = localStorage.getItem('albuquerque_guerra_contact_messages');
+      const list = existing ? JSON.parse(existing) : [];
+      list.unshift(newSubmission);
+      localStorage.setItem('albuquerque_guerra_contact_messages', JSON.stringify(list));
+    } catch (err) {
+      console.warn('Error recording message:', err);
+    }
+
     setSubmitted(true);
   };
 
@@ -83,8 +107,8 @@ export const Contact: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold text-[#FFFDF8] uppercase tracking-wider mb-1">Telefone</h4>
-                    <a href={`tel:${settings ? settings.contact_phone.replace(/\D/g, '') : '8130718988'}`} className="text-sm text-[#D8CBB3] hover:underline font-light">
-                      {settings ? settings.contact_phone : '(81) 3071-8988'}
+                    <a href={`tel:${settings ? settings.contact_phone.replace(/\D/g, '') : '8130349988'}`} className="text-sm text-[#D8CBB3] hover:underline font-light">
+                      {settings ? settings.contact_phone : '+55 (81) 3034-9988'}
                     </a>
                   </div>
                 </div>
@@ -108,7 +132,7 @@ export const Contact: React.FC = () => {
                   <div>
                     <h4 className="text-sm font-semibold text-[#FFFDF8] uppercase tracking-wider mb-1">Horário de Atendimento</h4>
                     <p className="text-sm text-[#F6F3EC]/80 font-light">
-                      {settings ? settings.contact_hours : 'Segunda a Sexta, das 8h às 18h.'}
+                      {settings ? settings.contact_hours : 'Segunda a Sexta, das 08h às 18h.'}
                     </p>
                   </div>
                 </div>
@@ -150,67 +174,68 @@ export const Contact: React.FC = () => {
                   </div>
 
                   {error && (
-                    <div className="p-4 rounded-xl bg-red-950/50 border border-red-500/30 text-red-200 text-sm">
+                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
                       {error}
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-xs uppercase tracking-wider text-[#D8CBB3] font-medium mb-2">
+                      <label className="block text-xs font-semibold text-[#F6F3EC]/80 uppercase tracking-wider mb-2">
                         Nome Completo *
                       </label>
                       <input
                         type="text"
-                        required
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                        className="w-full bg-[#151f1f] border border-[#D8CBB3]/20 rounded-xl py-3 px-4 text-[#F6F3EC] focus:outline-none focus:border-[#D8CBB3] transition-colors"
                         placeholder="Seu nome"
-                        className="w-full px-4 py-3.5 rounded-xl bg-[#151f1f] border border-[#D8CBB3]/20 text-[#FFFDF8] placeholder:text-white/30 focus:outline-none focus:border-[#D8CBB3] transition-colors text-sm"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs uppercase tracking-wider text-[#D8CBB3] font-medium mb-2">
+                      <label className="block text-xs font-semibold text-[#F6F3EC]/80 uppercase tracking-wider mb-2">
                         E-mail *
                       </label>
                       <input
                         type="email"
-                        required
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        required
+                        className="w-full bg-[#151f1f] border border-[#D8CBB3]/20 rounded-xl py-3 px-4 text-[#F6F3EC] focus:outline-none focus:border-[#D8CBB3] transition-colors"
                         placeholder="seu@email.com"
-                        className="w-full px-4 py-3.5 rounded-xl bg-[#151f1f] border border-[#D8CBB3]/20 text-[#FFFDF8] placeholder:text-white/30 focus:outline-none focus:border-[#D8CBB3] transition-colors text-sm"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-xs uppercase tracking-wider text-[#D8CBB3] font-medium mb-2">
+                      <label className="block text-xs font-semibold text-[#F6F3EC]/80 uppercase tracking-wider mb-2">
                         Telefone / WhatsApp
                       </label>
                       <input
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full bg-[#151f1f] border border-[#D8CBB3]/20 rounded-xl py-3 px-4 text-[#F6F3EC] focus:outline-none focus:border-[#D8CBB3] transition-colors"
                         placeholder="(81) 99999-9999"
-                        className="w-full px-4 py-3.5 rounded-xl bg-[#151f1f] border border-[#D8CBB3]/20 text-[#FFFDF8] placeholder:text-white/30 focus:outline-none focus:border-[#D8CBB3] transition-colors text-sm"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs uppercase tracking-wider text-[#D8CBB3] font-medium mb-2">
+                      <label className="block text-xs font-semibold text-[#F6F3EC]/80 uppercase tracking-wider mb-2">
                         Área de Interesse
                       </label>
                       <select
                         value={formData.area}
                         onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                        className="w-full px-4 py-3.5 rounded-xl bg-[#151f1f] border border-[#D8CBB3]/20 text-[#FFFDF8] focus:outline-none focus:border-[#D8CBB3] transition-colors text-sm"
+                        className="w-full bg-[#151f1f] border border-[#D8CBB3]/20 rounded-xl py-3 px-4 text-[#F6F3EC] focus:outline-none focus:border-[#D8CBB3] transition-colors"
                       >
                         <option value="Trabalhista e Previdenciário">Trabalhista e Previdenciário</option>
                         <option value="Tributário">Tributário</option>
-                        <option value="Civil, Imobiliário e do Consumidor">Civil, Imobiliário e do Consumidor</option>
+                        <option value="Civil e Imobiliário">Civil e Imobiliário</option>
+                        <option value="Consumidor">Consumidor</option>
                         <option value="Terceiro Setor">Terceiro Setor</option>
                         <option value="Outro assunto">Outro assunto</option>
                       </select>
@@ -218,16 +243,16 @@ export const Contact: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#D8CBB3] font-medium mb-2">
+                    <label className="block text-xs font-semibold text-[#F6F3EC]/80 uppercase tracking-wider mb-2">
                       Mensagem *
                     </label>
                     <textarea
-                      required
                       rows={4}
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      required
+                      className="w-full bg-[#151f1f] border border-[#D8CBB3]/20 rounded-xl py-3 px-4 text-[#F6F3EC] focus:outline-none focus:border-[#D8CBB3] transition-colors resize-none"
                       placeholder="Descreva brevemente a sua necessidade jurídica..."
-                      className="w-full px-4 py-3.5 rounded-xl bg-[#151f1f] border border-[#D8CBB3]/20 text-[#FFFDF8] placeholder:text-white/30 focus:outline-none focus:border-[#D8CBB3] transition-colors text-sm resize-none"
                     />
                   </div>
 
@@ -235,22 +260,21 @@ export const Contact: React.FC = () => {
                     <input
                       type="checkbox"
                       id="privacy"
-                      required
                       checked={formData.privacy}
                       onChange={(e) => setFormData({ ...formData, privacy: e.target.checked })}
-                      className="mt-1 w-4 h-4 rounded bg-[#151f1f] border-[#D8CBB3]/30 text-[#D8CBB3] focus:ring-0"
+                      className="mt-1 rounded border-white/20 bg-[#151f1f] text-[#D8CBB3] focus:ring-0 accent-[#D8CBB3]"
                     />
-                    <label htmlFor="privacy" className="text-xs text-[#F6F3EC]/70 leading-relaxed font-light">
+                    <label htmlFor="privacy" className="text-xs text-[#F6F3EC]/70 leading-relaxed">
                       Concordo com o tratamento dos meus dados pessoais fornecidos para fins de contato e atendimento jurídico, em conformidade com a LGPD.
                     </label>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-4 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl transition-all shadow-xl flex items-center justify-center gap-2 group"
+                    className="w-full py-4 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-sm transition-all duration-300 shadow-xl flex items-center justify-center gap-2 group cursor-pointer"
                   >
                     <span>Enviar mensagem</span>
-                    <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                   </button>
                 </form>
               )}

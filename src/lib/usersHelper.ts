@@ -17,7 +17,7 @@ export const defaultAdminUsers: AdminUser[] = [
     id: '1',
     name: 'Edson Barbosa',
     email: 'edsonrb.barbosa@gmail.com',
-    password: '123456',
+    password: 'Maedson@862274',
     role: 'Administrador',
     status: 'Ativo',
     created_at: new Date().toISOString()
