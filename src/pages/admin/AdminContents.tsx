@@ -690,7 +690,7 @@ export const AdminContents: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Nome do Cliente *</label>
                     <input
@@ -712,16 +712,6 @@ export const AdminContents: React.FC = () => {
                       <option value="5">5 Estrelas (⭐⭐⭐⭐⭐)</option>
                       <option value="4">4 Estrelas (⭐⭐⭐⭐)</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider mb-1 text-[#F6F3EC]/70">Período / Tempo</label>
-                    <input
-                      type="text"
-                      value={editingReview.relative_time_description}
-                      onChange={(e) => setEditingReview({ ...editingReview, relative_time_description: e.target.value })}
-                      placeholder="Ex: há 2 meses"
-                      className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                    />
                   </div>
                 </div>
 
@@ -762,7 +752,10 @@ export const AdminContents: React.FC = () => {
                       <p className="text-xs text-[#F6F3EC]/70 italic line-clamp-3">"{rev.text}"</p>
                     </div>
                     <div className="pt-2 border-t border-white/5 flex items-center justify-between">
-                      <span className="text-[11px] text-[#D8CBB3]">{rev.relative_time_description}</span>
+                      <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Cliente Verificado Google
+                      </span>
                       <div className="flex gap-2">
                         <button 
                           type="button"

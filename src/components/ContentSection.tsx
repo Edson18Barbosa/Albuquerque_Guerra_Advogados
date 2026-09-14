@@ -322,7 +322,6 @@ export const ContentSection: React.FC = () => {
                           </div>
                           <div>
                             <h4 className="text-[#FFFDF8] font-medium text-sm">{review.author_name}</h4>
-                            <span className="text-[11px] text-[#F6F3EC]/50 font-light">{review.relative_time_description}</span>
                           </div>
                         </div>
 
