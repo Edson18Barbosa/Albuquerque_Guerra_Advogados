@@ -6,25 +6,10 @@ import { supabase } from '../../lib/supabase';
 export const AdminSettings: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dbStatus, setDbStatus] = useState<'connected' | 'error' | 'testing'>('testing');
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error' | null, text: string }>({ type: null, text: '' });
-
-  const testConnection = async () => {
-    setDbStatus('testing');
-    try {
-      // Query a simple select to test connection
-      const { error } = await supabase.from('media_library').select('count', { count: 'exact', head: true });
-      if (error && error.code !== 'PGRST116') throw error;
-      setDbStatus('connected');
-    } catch (e) {
-      console.warn('Supabase ping test failed:', e);
-      setDbStatus('error');
-    }
-  };
 
   useEffect(() => {
     setSettings(getSiteSettings());
-    testConnection();
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -84,10 +69,10 @@ export const AdminSettings: React.FC = () => {
 
       <div>
         <h1 className="text-3xl font-serif text-[#FFFDF8] mb-2 font-light">Configurações Gerais</h1>
-        <p className="text-[#F6F3EC]/70">Gerencie a paleta de cores primária, conexões de dados e redefinição do sistema.</p>
+        <p className="text-[#F6F3EC]/70">Gerencie a paleta de cores primária e a restauração do sistema.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-4xl">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-5xl">
         
         {/* Left Form: Preferences */}
         <form onSubmit={handleSave} className="lg:col-span-8 bg-[#151f1f] p-8 border border-white/10 rounded-2xl shadow-xl space-y-6">
@@ -117,38 +102,15 @@ export const AdminSettings: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-8 py-3 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-sm transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+              className="px-8 py-3 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-sm transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               {isSubmitting ? 'Salvando...' : 'Salvar Configurações'}
             </button>
           </div>
         </form>
 
-        {/* Right Info: DB Status and System Reset */}
+        {/* Right Info: Danger Zone */}
         <div className="lg:col-span-4 space-y-6">
-          
-          {/* Database Connection Info */}
-          <div className="bg-[#151f1f] p-6 border border-white/10 rounded-2xl shadow-xl space-y-4">
-            <h3 className="text-xs font-semibold tracking-wider text-[#D8CBB3] uppercase">Conexão de Banco de Dados</h3>
-            <div className="flex items-center gap-2.5">
-              <div className={`w-3.5 h-3.5 rounded-full ${
-                dbStatus === 'connected' ? 'bg-green-500 animate-pulse' :
-                dbStatus === 'error' ? 'bg-red-500' : 'bg-yellow-500 animate-spin'
-              }`} />
-              <span className="text-xs font-medium">
-                {dbStatus === 'connected' ? 'Supabase Conectado' :
-                 dbStatus === 'error' ? 'Usando Fallback Local' : 'Testando Conectividade...'}
-              </span>
-            </div>
-            <button 
-              onClick={testConnection}
-              className="w-full py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-semibold transition-all border border-white/10"
-            >
-              Testar Conexão Novamente
-            </button>
-          </div>
-
-          {/* Danger Zone */}
           <div className="bg-[#151f1f] p-6 border border-red-500/20 rounded-2xl shadow-xl space-y-4">
             <h3 className="text-xs font-semibold tracking-wider text-red-400 uppercase">Zona de Risco</h3>
             <p className="text-[11px] text-[#F6F3EC]/50 leading-relaxed">
@@ -157,12 +119,11 @@ export const AdminSettings: React.FC = () => {
             <button 
               onClick={handleResetAll}
               disabled={isSubmitting}
-              className="w-full py-2.5 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white rounded-xl text-xs font-semibold transition-all border border-red-500/20"
+              className="w-full py-2.5 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white rounded-xl text-xs font-semibold transition-all border border-red-500/20 cursor-pointer"
             >
               Redefinir Todo o Site
             </button>
           </div>
-
         </div>
 
       </div>
@@ -170,3 +131,4 @@ export const AdminSettings: React.FC = () => {
     </div>
   );
 };
+
