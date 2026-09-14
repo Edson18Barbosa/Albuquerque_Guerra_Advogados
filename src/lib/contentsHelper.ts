@@ -89,6 +89,58 @@ export const defaultGoogleReviews: GoogleReview[] = [
     "review_link": "https://www.google.com/search?kgmid=/g/11p5kwclk3&hl=pt-BR&q=Advocacia+Jo%C3%A3o+Guerra#lrd=0x7ab19d61d600507:0x53f2f7602f5dc50a,1,,,,",
     "is_active": true,
     "created_at": "2024-05-10T10:00:00Z"
+  },
+  {
+    "id": "rev-messias-santos",
+    "author_name": "Messias Santos",
+    "author_avatar": "",
+    "rating": 5,
+    "relative_time_description": "2 anos atrás",
+    "text": "Um homem trabalhador e um profissional dedicado, em tempos de muita criatividade nos negócios na política e no mundo, ele através da sua incansável militância e saber jurídico nos dá a segurança para seguir a nossa justa caminhada! Muito agradecido por me aceitar ser seu cliente!",
+    "service_type": "Segurança Jurídica & Atuação Estratégica",
+    "is_verified": true,
+    "review_link": "https://www.google.com/search?kgmid=/g/11p5kwclk3&hl=pt-BR&q=Advocacia+Jo%C3%A3o+Guerra#lrd=0x7ab19d61d600507:0x53f2f7602f5dc50a,1,,,,",
+    "is_active": true,
+    "created_at": "2024-06-15T14:30:00Z"
+  },
+  {
+    "id": "rev-suzam-kelle",
+    "author_name": "Suzam Kelle Cristovao",
+    "author_avatar": "",
+    "rating": 5,
+    "relative_time_description": "2 anos atrás",
+    "text": "Equipe super competente, sempre me deixaram ciente de tudo que estava acontecendo sobre o processo,só tenho elogios a toda equipe .",
+    "service_type": "Acompanhamento & Transparência Processual",
+    "is_verified": true,
+    "review_link": "https://www.google.com/search?kgmid=/g/11p5kwclk3&hl=pt-BR&q=Advocacia+Jo%C3%A3o+Guerra#lrd=0x7ab19d61d600507:0x53f2f7602f5dc50a,1,,,,",
+    "is_active": true,
+    "created_at": "2024-07-20T11:00:00Z"
+  },
+  {
+    "id": "rev-fabio-gomes",
+    "author_name": "Fabio Gomes",
+    "author_avatar": "",
+    "rating": 5,
+    "relative_time_description": "um ano atrás",
+    "text": "Extremamente satisfeito com o trabalho prestado pelos profissionais da Advocacia João Guerra! Presteza no atendimento, clareza nos processos, idoneidade e transparência são adjetivos que descrevem o trabalho dessa equipe!",
+    "service_type": "Presteza, Idoneidade & Rigor Técnico",
+    "is_verified": true,
+    "review_link": "https://www.google.com/search?kgmid=/g/11p5kwclk3&hl=pt-BR&q=Advocacia+Jo%C3%A3o+Guerra#lrd=0x7ab19d61d600507:0x53f2f7602f5dc50a,1,,,,",
+    "is_active": true,
+    "created_at": "2025-04-18T16:20:00Z"
+  },
+  {
+    "id": "rev-marina-reis",
+    "author_name": "Marina Reis",
+    "author_avatar": "",
+    "rating": 5,
+    "relative_time_description": "2 anos atrás",
+    "text": "Pessoas muito competentes e compromissadas em fazer o melhor para atender seus clientes de forma muito transparente. Recomendo demais!",
+    "service_type": "Comprometimento & Excelência no Atendimento",
+    "is_verified": true,
+    "review_link": "https://www.google.com/search?kgmid=/g/11p5kwclk3&hl=pt-BR&q=Advocacia+Jo%C3%A3o+Guerra#lrd=0x7ab19d61d600507:0x53f2f7602f5dc50a,1,,,,",
+    "is_active": true,
+    "created_at": "2024-08-05T09:15:00Z"
   }
 ];
 
@@ -213,7 +265,7 @@ export const deleteVideoAd = async (id: string): Promise<void> => {
 // ================= GOOGLE REVIEWS CRUD =================
 export const getGoogleReviews = async (): Promise<GoogleReview[]> => {
   try {
-    const { data, error } = await supabase.from('site_google_reviews').select('*').order('rating', { ascending: false });
+    const { data, error } = await supabase.from('site_google_reviews').select('*').order('created_at', { ascending: false });
     if (!error && data && data.length > 0) {
       localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(data));
       return data;
@@ -224,10 +276,8 @@ export const getGoogleReviews = async (): Promise<GoogleReview[]> => {
   const stored = localStorage.getItem(REVIEWS_STORAGE_KEY);
   if (stored) {
     const parsed: GoogleReview[] = JSON.parse(stored);
-    // Filter out old mock reviews
     const cleaned = parsed.filter(r => !['Carlos Eduardo Menezes', 'Mariana Vasconcelos', 'Roberto Figueiredo Cavalcanti', 'Luciana Queiroz'].includes(r.author_name));
-    if (cleaned.length > 0) {
-      localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(cleaned));
+    if (cleaned.length >= 5) {
       return cleaned;
     }
   }
