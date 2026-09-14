@@ -141,6 +141,19 @@ export const defaultGoogleReviews: GoogleReview[] = [
     "review_link": "https://www.google.com/search?kgmid=/g/11p5kwclk3&hl=pt-BR&q=Advocacia+Jo%C3%A3o+Guerra#lrd=0x7ab19d61d600507:0x53f2f7602f5dc50a,1,,,,",
     "is_active": true,
     "created_at": "2024-08-05T09:15:00Z"
+  },
+  {
+    "id": "rev-rodrigo-albuquerque",
+    "author_name": "Rodrigo Albuquerque",
+    "author_avatar": "",
+    "rating": 5,
+    "relative_time_description": "2 anos atrás",
+    "text": "Excelente atendimento! Profissionais altamente qualificados, atendimento humanizado, ágil e com soluções jurídicas precisas e seguras. Recomendo com total confiança!",
+    "service_type": "Atendimento Humanizado & Segurança Jurídica",
+    "is_verified": true,
+    "review_link": "https://www.google.com/search?kgmid=/g/11p5kwclk3&hl=pt-BR&q=Advocacia+Jo%C3%A3o+Guerra#lrd=0x7ab19d61d600507:0x53f2f7602f5dc50a,1,,,,",
+    "is_active": true,
+    "created_at": "2024-09-12T15:45:00Z"
   }
 ];
 
@@ -277,7 +290,7 @@ export const getGoogleReviews = async (): Promise<GoogleReview[]> => {
   if (stored) {
     const parsed: GoogleReview[] = JSON.parse(stored);
     const cleaned = parsed.filter(r => !['Carlos Eduardo Menezes', 'Mariana Vasconcelos', 'Roberto Figueiredo Cavalcanti', 'Luciana Queiroz'].includes(r.author_name));
-    if (cleaned.length >= 5) {
+    if (cleaned.length >= 6) {
       return cleaned;
     }
   }
