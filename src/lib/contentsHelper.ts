@@ -78,43 +78,17 @@ export const defaultVideoAds: VideoAd[] = [];
 
 export const defaultGoogleReviews: GoogleReview[] = [
   {
-    id: 'rev-1',
-    author_name: 'Carlos Eduardo Menezes',
-    author_avatar: '',
-    rating: 5,
-    relative_time_description: 'há 2 semanas',
-    text: 'Excelente atendimento e competência ímpar! O escritório nos orientou em todo o processo com extrema clareza, transparência e segurança jurídica. Recomendo de olhos fechados.',
-    service_type: 'Planejamento Sucessório & Holding',
-    is_verified: true,
-    review_link: 'https://share.google/rHwBjzhN1Mp6eJvRo',
-    is_active: true,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'rev-2',
-    author_name: 'Mariana Vasconcelos',
-    author_avatar: '',
-    rating: 5,
-    relative_time_description: 'há 1 mês',
-    text: 'Escritório de altíssimo nível. A equipe demonstrou agilidade e profundo domínio técnico em nossa demanda empresarial. Estrutura impecável e atendimento humanizado.',
-    service_type: 'Direito Empresarial & Contratos',
-    is_verified: true,
-    review_link: 'https://share.google/rHwBjzhN1Mp6eJvRo',
-    is_active: true,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'rev-3',
-    author_name: 'Roberto Figueiredo Cavalcanti',
-    author_avatar: '',
-    rating: 5,
-    relative_time_description: 'há 2 meses',
-    text: 'Profissionais dedicados, pontuais e com visão estratégica refinada. As diligências e relatórios constantes trazem total tranquilidade para quem contrata.',
-    service_type: 'Atuação Contenciosa e Consultiva',
-    is_verified: true,
-    review_link: 'https://share.google/rHwBjzhN1Mp6eJvRo',
-    is_active: true,
-    created_at: new Date().toISOString()
+    "id": "rev-hideraldo-borba",
+    "author_name": "Hideraldo Borba",
+    "author_avatar": "",
+    "rating": 5,
+    "relative_time_description": "2 anos atrás",
+    "text": "Das experiências que tive e ainda tenho com outros escritórios este escritório é diferenciado, com emissão de relatórios de acompanhamento dos processos. Sem falar no retorno das ligações e atendimentos via mídias. A equipe muito atenciosa e competente. Parabéns a todos que fazem a Advocacia João Guerra.",
+    "service_type": "Relatórios & Acompanhamento de Processos",
+    "is_verified": true,
+    "review_link": "https://www.google.com/search?kgmid=/g/11p5kwclk3&hl=pt-BR&q=Advocacia+Jo%C3%A3o+Guerra#lrd=0x7ab19d61d600507:0x53f2f7602f5dc50a,1,,,,",
+    "is_active": true,
+    "created_at": "2024-05-10T10:00:00Z"
   }
 ];
 
@@ -248,7 +222,15 @@ export const getGoogleReviews = async (): Promise<GoogleReview[]> => {
     console.warn('Error fetching reviews from Supabase:', e);
   }
   const stored = localStorage.getItem(REVIEWS_STORAGE_KEY);
-  if (stored) return JSON.parse(stored);
+  if (stored) {
+    const parsed: GoogleReview[] = JSON.parse(stored);
+    // Filter out old mock reviews
+    const cleaned = parsed.filter(r => !['Carlos Eduardo Menezes', 'Mariana Vasconcelos', 'Roberto Figueiredo Cavalcanti', 'Luciana Queiroz'].includes(r.author_name));
+    if (cleaned.length > 0) {
+      localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(cleaned));
+      return cleaned;
+    }
+  }
   localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(defaultGoogleReviews));
   return defaultGoogleReviews;
 };
