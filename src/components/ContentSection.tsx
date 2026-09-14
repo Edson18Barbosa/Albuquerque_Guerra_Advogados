@@ -58,7 +58,7 @@ export const ContentSection: React.FC = () => {
   });
 
   const hasVideos = videos.length > 0;
-  const googleReviewsLink = settings?.google_reviews_url || 'https://share.google/rHwBjzhN1Mp6eJvRo';
+  const googleReviewsLink = settings?.google_reviews_url || 'https://www.google.com/search?kgmid=/g/11p5kwclk3&hl=pt-BR&q=Advocacia+Jo%C3%A3o+Guerra#lrd=0x7ab19d61d600507:0x53f2f7602f5dc50a,1,,,,';
 
   return (
     <section id="conteudos" className="py-32 bg-[#101616] relative border-t border-[#D8CBB3]/10 overflow-hidden">
@@ -130,7 +130,7 @@ export const ContentSection: React.FC = () => {
                 <button
                   key={cat}
                   onClick={() => setArticleCategoryFilter(cat)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                     articleCategoryFilter === cat
                       ? 'bg-[#D8CBB3] text-[#101616]'
                       : 'bg-white/5 border border-white/10 text-[#F6F3EC]/70 hover:border-[#D8CBB3]/50 hover:text-[#D8CBB3]'
@@ -224,7 +224,7 @@ export const ContentSection: React.FC = () => {
                   <div className="p-6 md:p-8 flex flex-col flex-grow justify-between space-y-4">
                     <div className="space-y-2">
                       <h3 className="text-lg font-serif text-[#FFFDF8] font-medium leading-snug group-hover:text-[#D8CBB3] transition-colors">
-                        {video.title}
+                        {video.title || 'Vídeo Institucional'}
                       </h3>
                       {video.description && (
                         <p className="text-[#F6F3EC]/70 text-sm font-light leading-relaxed line-clamp-3">
@@ -262,21 +262,22 @@ export const ContentSection: React.FC = () => {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-center sm:justify-start gap-2.5">
-                    <span className="text-3xl font-bold text-[#FFFDF8]">5.0</span>
+                    <span className="text-3xl font-bold text-[#FFFDF8]">5,0</span>
                     <div className="flex text-amber-400">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} className="w-5 h-5 fill-amber-400" />
                       ))}
                     </div>
+                    <span className="text-xs text-[#D8CBB3] font-medium ml-1">(59 avaliações)</span>
                   </div>
 
                   <h3 className="text-2xl font-serif text-[#FFFDF8]">
-                    Albuquerque Guerra Advogados no Google
+                    Advocacia João Guerra no Google
                   </h3>
 
                   <p className="text-xs text-[#F6F3EC]/80 flex items-center justify-center sm:justify-start gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    Avaliações e depoimentos verificados diretamente no Google Maps
+                    R. Arnóbio Marques, 253 - Santo Amaro, Recife - PE • Avaliações Verificadas
                   </p>
                 </div>
               </div>
@@ -286,7 +287,7 @@ export const ContentSection: React.FC = () => {
                   href={googleReviewsLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3.5 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                  className="px-6 py-3.5 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                 >
                   <Star className="w-4 h-4 text-[#101616] fill-[#101616]" />
                   <span>Ver Avaliações no Google</span>
@@ -297,7 +298,7 @@ export const ContentSection: React.FC = () => {
                   href={googleReviewsLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3.5 bg-white/5 hover:bg-white/10 border border-white/15 text-[#FFFDF8] font-semibold rounded-xl text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
+                  className="px-6 py-3.5 bg-white/5 hover:bg-white/10 border border-white/15 text-[#FFFDF8] font-semibold rounded-xl text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2 hover:scale-[1.02] cursor-pointer"
                 >
                   <span>Deixar Avaliação</span>
                   <ExternalLink className="w-4 h-4 text-[#D8CBB3]" />

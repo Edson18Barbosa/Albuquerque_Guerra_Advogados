@@ -5,11 +5,12 @@ import {
 } from 'lucide-react';
 import { Article, VideoAd, GoogleReview } from '../../types/contents';
 import { 
-  getArticles, saveArticle, deleteArticle, 
-  getVideoAds, saveVideoAd, deleteVideoAd,
-  getGoogleReviews, saveGoogleReview, deleteGoogleReview
+  getArticles, saveArticle, deleteArticle, ARTICLES_STORAGE_KEY,
+  getVideoAds, saveVideoAd, deleteVideoAd, VIDEOS_STORAGE_KEY,
+  getGoogleReviews, saveGoogleReview, deleteGoogleReview, REVIEWS_STORAGE_KEY,
+  formatEmbedUrl
 } from '../../lib/contentsHelper';
-import { getSiteSettings, saveSiteSettings, SiteSettings } from '../../lib/settingsHelper';
+import { getSiteSettings, saveSiteSettings, SiteSettings, SETTINGS_STORAGE_KEY } from '../../lib/settingsHelper';
 
 export const AdminContents: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'articles' | 'videos' | 'google_link'>('articles');
@@ -24,7 +25,7 @@ export const AdminContents: React.FC = () => {
   const [editingReview, setEditingReview] = useState<GoogleReview | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [googleUrl, setGoogleUrl] = useState('https://share.google/rHwBjzhN1Mp6eJvRo');
+  const [googleUrl, setGoogleUrl] = useState('https://www.google.com/search?kgmid=/g/11p5kwclk3&hl=pt-BR&q=Advocacia+Jo%C3%A3o+Guerra#lrd=0x7ab19d61d600507:0x53f2f7602f5dc50a,1,,,,');
 
   const loadAll = async () => {
     try {
@@ -60,10 +61,18 @@ export const AdminContents: React.FC = () => {
     e.preventDefault();
     if (!editingArticle) return;
     try {
-      await saveArticle(editingArticle);
-      await loadAll();
+      const updated = [...articles];
+      const idx = updated.findIndex(a => a.id === editingArticle.id);
+      if (idx !== -1) {
+        updated[idx] = editingArticle;
+      } else {
+        updated.unshift(editingArticle);
+      }
+      setArticles(updated);
+      localStorage.setItem(ARTICLES_STORAGE_KEY, JSON.stringify(updated));
       setEditingArticle(null);
       notify('success', 'Artigo salvo com sucesso!');
+      await saveArticle(editingArticle);
     } catch (err: any) {
       notify('error', 'Erro ao salvar artigo: ' + err.message);
     }
@@ -72,9 +81,11 @@ export const AdminContents: React.FC = () => {
   const handleDeleteArticle = async (id: string) => {
     if (!confirm('Deseja excluir este artigo?')) return;
     try {
-      await deleteArticle(id);
-      await loadAll();
+      const updated = articles.filter(a => a.id !== id);
+      setArticles(updated);
+      localStorage.setItem(ARTICLES_STORAGE_KEY, JSON.stringify(updated));
       notify('success', 'Artigo excluído com sucesso.');
+      await deleteArticle(id);
     } catch (err: any) {
       notify('error', 'Erro ao excluir artigo: ' + err.message);
     }
@@ -89,10 +100,22 @@ export const AdminContents: React.FC = () => {
       return;
     }
     try {
-      await saveVideoAd(editingVideo);
-      await loadAll();
+      const formatted: VideoAd = {
+        ...editingVideo,
+        video_url: formatEmbedUrl(editingVideo.video_url)
+      };
+      const updated = [...videos];
+      const idx = updated.findIndex(v => v.id === formatted.id);
+      if (idx !== -1) {
+        updated[idx] = formatted;
+      } else {
+        updated.unshift(formatted);
+      }
+      setVideos(updated);
+      localStorage.setItem(VIDEOS_STORAGE_KEY, JSON.stringify(updated));
       setEditingVideo(null);
       notify('success', 'Vídeo salvo com sucesso! Ele agora aparecerá na aba de vídeos do site.');
+      await saveVideoAd(formatted);
     } catch (err: any) {
       notify('error', 'Erro ao salvar vídeo: ' + err.message);
     }
@@ -101,9 +124,11 @@ export const AdminContents: React.FC = () => {
   const handleDeleteVideo = async (id: string) => {
     if (!confirm('Deseja excluir este vídeo?')) return;
     try {
+      const updated = videos.filter(v => v.id !== id);
+      setVideos(updated);
+      localStorage.setItem(VIDEOS_STORAGE_KEY, JSON.stringify(updated));
+      notify('success', 'Vídeo excluído com sucesso. A aba de vídeos se ajustará automaticamente.');
       await deleteVideoAd(id);
-      await loadAll();
-      notify('success', 'Vídeo removido. Se não houver outros vídeos, a aba ficará oculta no site.');
     } catch (err: any) {
       notify('error', 'Erro ao excluir vídeo: ' + err.message);
     }
@@ -114,10 +139,18 @@ export const AdminContents: React.FC = () => {
     e.preventDefault();
     if (!editingReview) return;
     try {
-      await saveGoogleReview(editingReview);
-      await loadAll();
+      const updated = [...reviews];
+      const idx = updated.findIndex(r => r.id === editingReview.id);
+      if (idx !== -1) {
+        updated[idx] = editingReview;
+      } else {
+        updated.unshift(editingReview);
+      }
+      setReviews(updated);
+      localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(updated));
       setEditingReview(null);
-      notify('success', 'Avaliação do Google salva com sucesso!');
+      notify('success', 'Avaliação salva com sucesso!');
+      await saveGoogleReview(editingReview);
     } catch (err: any) {
       notify('error', 'Erro ao salvar avaliação: ' + err.message);
     }
@@ -126,9 +159,11 @@ export const AdminContents: React.FC = () => {
   const handleDeleteReview = async (id: string) => {
     if (!confirm('Deseja excluir esta avaliação?')) return;
     try {
-      await deleteGoogleReview(id);
-      await loadAll();
+      const updated = reviews.filter(r => r.id !== id);
+      setReviews(updated);
+      localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(updated));
       notify('success', 'Avaliação removida.');
+      await deleteGoogleReview(id);
     } catch (err: any) {
       notify('error', 'Erro ao excluir avaliação: ' + err.message);
     }
@@ -144,8 +179,9 @@ export const AdminContents: React.FC = () => {
         ...settings,
         google_reviews_url: googleUrl.trim()
       };
-      await saveSiteSettings(updatedSettings);
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings));
       setSettings(updatedSettings);
+      await saveSiteSettings(updatedSettings);
       notify('success', 'Link oficial das avaliações do Google salvo com sucesso!');
     } catch (err: any) {
       notify('error', 'Erro ao salvar link do Google: ' + err.message);
@@ -164,7 +200,7 @@ export const AdminContents: React.FC = () => {
             {statusMsg.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
             <span className="text-sm font-medium">{statusMsg.text}</span>
           </div>
-          <button onClick={() => setStatusMsg({ type: null, text: '' })} className="p-1 hover:bg-white/10 rounded">
+          <button onClick={() => setStatusMsg({ type: null, text: '' })} className="p-1 hover:bg-white/10 rounded cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -174,13 +210,13 @@ export const AdminContents: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-serif text-[#FFFDF8] mb-2 font-light">Gerenciar Conteúdos & Mídias</h1>
-          <p className="text-[#F6F3EC]/70">Gerencie artigos, links de vídeos e as avaliações oficiais do Google.</p>
+          <p className="text-[#F6F3EC]/70">Gerencie artigos, links de vídeos e o link oficial das avaliações do Google.</p>
         </div>
 
         <div className="flex flex-wrap gap-2 bg-[#151f1f] p-1.5 rounded-xl border border-white/10">
           <button
             onClick={() => { setActiveTab('articles'); setEditingArticle(null); setEditingVideo(null); setEditingReview(null); }}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'articles' ? 'bg-[#D8CBB3] text-[#101616]' : 'text-[#F6F3EC]/70 hover:text-white'
             }`}
           >
@@ -190,7 +226,7 @@ export const AdminContents: React.FC = () => {
 
           <button
             onClick={() => { setActiveTab('videos'); setEditingArticle(null); setEditingVideo(null); setEditingReview(null); }}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'videos' ? 'bg-[#D8CBB3] text-[#101616]' : 'text-[#F6F3EC]/70 hover:text-white'
             }`}
           >
@@ -200,7 +236,7 @@ export const AdminContents: React.FC = () => {
 
           <button
             onClick={() => { setActiveTab('google_link'); setEditingArticle(null); setEditingVideo(null); setEditingReview(null); }}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'google_link' ? 'bg-[#D8CBB3] text-[#101616]' : 'text-[#F6F3EC]/70 hover:text-white'
             }`}
           >
@@ -234,7 +270,7 @@ export const AdminContents: React.FC = () => {
                   status: 'Publicado',
                   created_at: new Date().toISOString()
                 })}
-                className="px-4 py-2 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-[#FFFDF8] transition-all"
+                className="px-4 py-2 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-[#FFFDF8] transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 Novo Artigo
@@ -243,12 +279,12 @@ export const AdminContents: React.FC = () => {
           </div>
 
           {editingArticle ? (
-            <form onSubmit={handleSaveArticle} className="bg-[#151f1f] p-8 border border-white/10 rounded-2xl space-y-6 max-w-4xl shadow-2xl">
+            <form onSubmit={handleSaveArticle} className="bg-[#151f1f] p-8 border border-white/10 rounded-2xl space-y-6 max-w-4xl shadow-2xl animate-fadeIn">
               <div className="flex justify-between items-center border-b border-white/10 pb-4">
                 <h3 className="text-lg font-serif text-[#FFFDF8]">
                   {articles.some(a => a.id === editingArticle.id) ? 'Editar Artigo' : 'Novo Artigo'}
                 </h3>
-                <button type="button" onClick={() => setEditingArticle(null)} className="p-1 hover:bg-white/10 rounded">
+                <button type="button" onClick={() => setEditingArticle(null)} className="p-1 hover:bg-white/10 rounded cursor-pointer">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -338,13 +374,13 @@ export const AdminContents: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setEditingArticle(null)}
-                  className="px-5 py-2.5 border border-white/10 hover:bg-white/5 rounded-xl text-xs uppercase"
+                  className="px-5 py-2.5 border border-white/10 hover:bg-white/5 rounded-xl text-xs uppercase cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase hover:bg-[#FFFDF8] transition-all shadow-lg"
+                  className="px-6 py-2.5 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase hover:bg-[#FFFDF8] transition-all shadow-lg cursor-pointer"
                 >
                   Salvar Artigo
                 </button>
@@ -362,10 +398,18 @@ export const AdminContents: React.FC = () => {
                   <div className="pt-4 border-t border-white/5 flex items-center justify-between">
                     <span className="text-xs text-[#F6F3EC]/50">{art.author}</span>
                     <div className="flex gap-2">
-                      <button onClick={() => setEditingArticle(art)} className="p-2 hover:bg-white/10 text-[#D8CBB3] rounded-lg">
+                      <button 
+                        onClick={() => setEditingArticle(art)} 
+                        className="p-2 hover:bg-white/10 text-[#D8CBB3] rounded-lg cursor-pointer"
+                        title="Editar Artigo"
+                      >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDeleteArticle(art.id)} className="p-2 hover:bg-red-500/10 text-red-400 rounded-lg">
+                      <button 
+                        onClick={() => handleDeleteArticle(art.id)} 
+                        className="p-2 hover:bg-red-500/10 text-red-400 rounded-lg cursor-pointer"
+                        title="Excluir Artigo"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -382,9 +426,9 @@ export const AdminContents: React.FC = () => {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-serif text-[#FFFDF8]">Vídeos</h2>
+              <h2 className="text-xl font-serif text-[#FFFDF8]">Vídeos Cadastrados</h2>
               <p className="text-xs text-[#F6F3EC]/60 mt-0.5">
-                Basta adicionar o link do vídeo (YouTube, Vimeo, etc.). A aba de vídeos só aparecerá no site se houver pelo menos 1 vídeo com link cadastrado.
+                Basta adicionar o link do vídeo. A aba de vídeos só aparecerá no site se houver pelo menos 1 vídeo cadastrado.
               </p>
             </div>
 
@@ -404,7 +448,7 @@ export const AdminContents: React.FC = () => {
                   is_featured: false,
                   created_at: new Date().toISOString()
                 })}
-                className="px-4 py-2 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-[#FFFDF8] transition-all shrink-0"
+                className="px-4 py-2 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-[#FFFDF8] transition-all shrink-0 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 Adicionar Vídeo
@@ -413,12 +457,12 @@ export const AdminContents: React.FC = () => {
           </div>
 
           {editingVideo ? (
-            <form onSubmit={handleSaveVideo} className="bg-[#151f1f] p-8 border border-white/10 rounded-2xl space-y-6 max-w-2xl shadow-2xl">
+            <form onSubmit={handleSaveVideo} className="bg-[#151f1f] p-8 border border-white/10 rounded-2xl space-y-6 max-w-2xl shadow-2xl animate-fadeIn">
               <div className="flex justify-between items-center border-b border-white/10 pb-4">
                 <h3 className="text-lg font-serif text-[#FFFDF8]">
                   {videos.some(v => v.id === editingVideo.id) ? 'Editar Vídeo' : 'Adicionar Novo Vídeo'}
                 </h3>
-                <button type="button" onClick={() => setEditingVideo(null)} className="p-1 hover:bg-white/10 rounded">
+                <button type="button" onClick={() => setEditingVideo(null)} className="p-1 hover:bg-white/10 rounded cursor-pointer">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -437,7 +481,7 @@ export const AdminContents: React.FC = () => {
                     className="w-full bg-[#101616] border border-[#D8CBB3]/40 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-[#D8CBB3] text-[#FFFDF8]"
                   />
                   <span className="text-[11px] text-[#F6F3EC]/50 mt-1 block">
-                    Aceita links normais do YouTube (ex: youtube.com/watch?v=..., youtu.be/... ou embed).
+                    Aceita links do YouTube (ex: youtube.com/watch?v=..., youtu.be/... ou embed).
                   </span>
                 </div>
 
@@ -472,13 +516,13 @@ export const AdminContents: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setEditingVideo(null)}
-                  className="px-5 py-2.5 border border-white/10 hover:bg-white/5 rounded-xl text-xs uppercase"
+                  className="px-5 py-2.5 border border-white/10 hover:bg-white/5 rounded-xl text-xs uppercase cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase hover:bg-[#FFFDF8] transition-all shadow-lg"
+                  className="px-6 py-2.5 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase hover:bg-[#FFFDF8] transition-all shadow-lg cursor-pointer"
                 >
                   Salvar Vídeo
                 </button>
@@ -511,16 +555,26 @@ export const AdminContents: React.FC = () => {
                           href={vid.video_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-[#D8CBB3] hover:underline flex items-center gap-1"
+                          className="text-xs text-[#D8CBB3] hover:underline flex items-center gap-1.5 font-medium cursor-pointer"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
-                          Ver link
+                          <span>Ver link</span>
                         </a>
                         <div className="flex gap-2">
-                          <button onClick={() => setEditingVideo(vid)} className="p-2 hover:bg-white/10 text-[#D8CBB3] rounded-lg">
+                          <button 
+                            type="button"
+                            onClick={() => setEditingVideo(vid)} 
+                            className="p-2 hover:bg-white/10 text-[#D8CBB3] rounded-lg cursor-pointer transition-colors"
+                            title="Editar Vídeo"
+                          >
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDeleteVideo(vid.id)} className="p-2 hover:bg-red-500/10 text-red-400 rounded-lg">
+                          <button 
+                            type="button"
+                            onClick={() => handleDeleteVideo(vid.id)} 
+                            className="p-2 hover:bg-red-500/10 text-red-400 rounded-lg cursor-pointer transition-colors"
+                            title="Excluir Vídeo"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -550,7 +604,7 @@ export const AdminContents: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-lg font-serif text-[#FFFDF8]">Link Oficial das Avaliações no Google</h3>
-                <p className="text-xs text-[#F6F3EC]/60">Configure o link oficial do Google Maps onde seus clientes deixam e leem avaliações</p>
+                <p className="text-xs text-[#F6F3EC]/60">Configure o link oficial do Google Maps onde seus clientes deixam e leem avaliações (5.0 ⭐ - 59 avaliações)</p>
               </div>
             </div>
 
@@ -567,7 +621,7 @@ export const AdminContents: React.FC = () => {
                       value={googleUrl}
                       onChange={(e) => setGoogleUrl(e.target.value)}
                       required
-                      placeholder="https://share.google/rHwBjzhN1Mp6eJvRo"
+                      placeholder="https://www.google.com/search?kgmid=/g/11p5kwclk3&hl=pt-BR&q=Advocacia+Jo%C3%A3o+Guerra#lrd=0x7ab19d61d600507:0x53f2f7602f5dc50a,1,,,,"
                       className="w-full bg-[#101616] border border-[#D8CBB3]/40 rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-[#D8CBB3] text-[#FFFDF8] font-mono"
                     />
                   </div>
@@ -575,11 +629,11 @@ export const AdminContents: React.FC = () => {
                     href={googleUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs flex items-center gap-1.5 text-[#FFFDF8]"
+                    className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs flex items-center gap-1.5 text-[#FFFDF8] cursor-pointer"
                     title="Testar Link no Google"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    <span>Testar Link</span>
+                    <span>Testar</span>
                   </a>
                 </div>
               </div>
@@ -601,7 +655,7 @@ export const AdminContents: React.FC = () => {
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="text-lg font-serif text-[#FFFDF8]">Depoimentos do Google em Destaque</h3>
-                <p className="text-xs text-[#F6F3EC]/60">Cadastre ou edite as avaliações dos clientes recebidas no Google</p>
+                <p className="text-xs text-[#F6F3EC]/60">Cadastre ou edite as avaliações dos clientes recebidas no perfil do Google</p>
               </div>
 
               {!editingReview && (
@@ -617,7 +671,7 @@ export const AdminContents: React.FC = () => {
                     is_active: true,
                     created_at: new Date().toISOString()
                   })}
-                  className="px-4 py-2 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-[#FFFDF8] transition-all"
+                  className="px-4 py-2 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-[#FFFDF8] transition-all cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   Cadastrar Avaliação
@@ -626,13 +680,13 @@ export const AdminContents: React.FC = () => {
             </div>
 
             {editingReview ? (
-              <form onSubmit={handleSaveReview} className="bg-[#151f1f] p-8 border border-white/10 rounded-2xl space-y-4 shadow-xl">
+              <form onSubmit={handleSaveReview} className="bg-[#151f1f] p-8 border border-white/10 rounded-2xl space-y-4 shadow-xl animate-fadeIn">
                 <div className="flex justify-between items-center border-b border-white/10 pb-3">
                   <h4 className="font-serif text-[#FFFDF8]">
                     {reviews.some(r => r.id === editingReview.id) ? 'Editar Avaliação' : 'Nova Avaliação'}
                   </h4>
-                  <button type="button" onClick={() => setEditingReview(null)} className="p-1 hover:bg-white/10 rounded">
-                    <X className="w-4 h-4" />
+                  <button type="button" onClick={() => setEditingReview(null)} className="p-1 hover:bg-white/10 rounded cursor-pointer">
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
 
@@ -644,7 +698,7 @@ export const AdminContents: React.FC = () => {
                       value={editingReview.author_name}
                       onChange={(e) => setEditingReview({ ...editingReview, author_name: e.target.value })}
                       required
-                      placeholder="Ex: Carlos Eduardo"
+                      placeholder="Ex: Hideraldo Borba"
                       className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
                     />
                   </div>
@@ -665,7 +719,7 @@ export const AdminContents: React.FC = () => {
                       type="text"
                       value={editingReview.relative_time_description}
                       onChange={(e) => setEditingReview({ ...editingReview, relative_time_description: e.target.value })}
-                      placeholder="Ex: há 2 semanas"
+                      placeholder="Ex: há 2 meses"
                       className="w-full bg-[#101616] border border-white/10 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
                     />
                   </div>
@@ -684,10 +738,10 @@ export const AdminContents: React.FC = () => {
                 </div>
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
-                  <button type="button" onClick={() => setEditingReview(null)} className="px-4 py-2 hover:bg-white/5 rounded-xl text-xs">
+                  <button type="button" onClick={() => setEditingReview(null)} className="px-4 py-2 hover:bg-white/5 rounded-xl text-xs cursor-pointer">
                     Cancelar
                   </button>
-                  <button type="submit" className="px-6 py-2.5 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs hover:bg-[#FFFDF8]">
+                  <button type="submit" className="px-6 py-2.5 bg-[#D8CBB3] text-[#101616] font-semibold rounded-xl text-xs hover:bg-[#FFFDF8] cursor-pointer">
                     Salvar Avaliação
                   </button>
                 </div>
@@ -695,7 +749,7 @@ export const AdminContents: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {reviews.map(rev => (
-                  <div key={rev.id} className="bg-[#151f1f] border border-white/10 rounded-2xl p-5 flex flex-col justify-between space-y-3">
+                  <div key={rev.id} className="bg-[#151f1f] border border-white/10 rounded-2xl p-5 flex flex-col justify-between space-y-3 shadow-xl">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <h4 className="text-sm font-medium text-[#FFFDF8]">{rev.author_name}</h4>
@@ -710,10 +764,20 @@ export const AdminContents: React.FC = () => {
                     <div className="pt-2 border-t border-white/5 flex items-center justify-between">
                       <span className="text-[11px] text-[#D8CBB3]">{rev.relative_time_description}</span>
                       <div className="flex gap-2">
-                        <button onClick={() => setEditingReview(rev)} className="p-1.5 hover:bg-white/10 text-[#D8CBB3] rounded">
+                        <button 
+                          type="button"
+                          onClick={() => setEditingReview(rev)} 
+                          className="p-1.5 hover:bg-white/10 text-[#D8CBB3] rounded cursor-pointer"
+                          title="Editar Avaliação"
+                        >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={() => handleDeleteReview(rev.id)} className="p-1.5 hover:bg-red-500/10 text-red-400 rounded">
+                        <button 
+                          type="button"
+                          onClick={() => handleDeleteReview(rev.id)} 
+                          className="p-1.5 hover:bg-red-500/10 text-red-400 rounded cursor-pointer"
+                          title="Excluir Avaliação"
+                        >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
