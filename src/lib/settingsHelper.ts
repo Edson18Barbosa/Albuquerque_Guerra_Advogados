@@ -100,6 +100,28 @@ export const getSiteSettings = (): SiteSettings => {
   return defaultSettings;
 };
 
+// Asynchronously fetches the latest settings directly from Supabase DB
+export const fetchSiteSettingsAsync = async (): Promise<SiteSettings> => {
+  try {
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('*')
+      .eq('id', 'global')
+      .single();
+
+    if (!error && data) {
+      const merged = { ...defaultSettings, ...data };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(merged));
+      }
+      return merged;
+    }
+  } catch (err) {
+    console.warn('Could not fetch settings from Supabase, using local fallback:', err);
+  }
+  return getSiteSettings();
+};
+
 // Saves the settings to localStorage and supabase
 export const saveSiteSettings = async (settings: Partial<SiteSettings>): Promise<SiteSettings> => {
   const current = getSiteSettings();
@@ -121,3 +143,4 @@ export const saveSiteSettings = async (settings: Partial<SiteSettings>): Promise
   
   return updated;
 };
+

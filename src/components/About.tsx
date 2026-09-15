@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Scale, CheckCircle2, Award, HeartHandshake } from 'lucide-react';
-import { getSiteSettings, SiteSettings } from '../lib/settingsHelper';
+import { getSiteSettings, fetchSiteSettingsAsync, SiteSettings } from '../lib/settingsHelper';
 import { getImageStyle } from '../lib/mediaHelper';
 import { Logo } from './Logo';
 
 export const About: React.FC = () => {
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [settings, setSettings] = useState<SiteSettings>(getSiteSettings());
 
   useEffect(() => {
-    setSettings(getSiteSettings());
+    fetchSiteSettingsAsync().then(setSettings);
   }, []);
 
   const indicators = [

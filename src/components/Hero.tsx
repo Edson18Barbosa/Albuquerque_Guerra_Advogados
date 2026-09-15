@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowDown, Shield, ChevronRight } from 'lucide-react';
 import { Monogram3D } from './Monogram3D';
-import { getSiteSettings, SiteSettings } from '../lib/settingsHelper';
+import { getSiteSettings, fetchSiteSettingsAsync, SiteSettings } from '../lib/settingsHelper';
 
 export const Hero: React.FC = () => {
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [settings, setSettings] = useState<SiteSettings>(getSiteSettings());
 
   useEffect(() => {
-    setSettings(getSiteSettings());
+    fetchSiteSettingsAsync().then(setSettings);
   }, []);
 
   if (!settings) return null;
