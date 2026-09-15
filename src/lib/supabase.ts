@@ -1,7 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const DEFAULT_URL = 'https://ascpakldxisyulyvzlgu.supabase.co';
-const DEFAULT_KEY = 'sb_publishable_-KFfJu4wTRsa0X7kwKAImA_L-I4Vc9E';
+const DEFAULT_URL = 'https://njuysucmnnqrzncirquc.supabase.co';
+const DEFAULT_KEY = 'sb_publishable_QzSiD5K-GRSXGLjJ87owlw_9QaSmGKp';
 
 export const getSupabaseConfig = () => {
   let customUrl = '';
