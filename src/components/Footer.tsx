@@ -122,7 +122,7 @@ export const Footer: React.FC = () => {
                 rel="noopener noreferrer" 
                 className="hover:text-[#D8CBB3] underline transition-colors"
               >
-                Evro Soluções
+                EB
               </a>
             </p>
           </div>

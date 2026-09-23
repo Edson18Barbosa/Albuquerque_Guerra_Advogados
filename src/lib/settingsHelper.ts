@@ -35,6 +35,7 @@ export interface SiteSettings {
   contact_address: string;
   contact_hours: string;
   contact_maps_url: string;
+  google_business_name: string; // Nome oficial do perfil no Google (Ex: Albuquerque Guerra Advogados)
   google_reviews_url: string; // Link oficial das avaliações no Google
   
   // SEO e redes sociais
@@ -77,6 +78,7 @@ export const defaultSettings: SiteSettings = {
   contact_address: 'Rua Arnóbio Marques, 253, sala 1703, Empresarial Camilo Brito, Santo Amaro, Recife - PE, CEP 50.100-130.',
   contact_hours: 'Segunda a Sexta, das 08h às 18h',
   contact_maps_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3950.0543789498263!2d-34.89115712415175!3d-8.112465381165683!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7ab1ef5bbba1b0b%3A0xe6ab1e2de66c80!2sAv.%20Eng.%20Domingos%20Ferreira%2C%20Recife%20-%20PE!5e0!3m2!1spt-BR!2sbr!4v1784767000000!5m2!1spt-BR!2sbr',
+  google_business_name: 'Albuquerque Guerra Advogados',
   google_reviews_url: 'https://www.google.com/search?kgmid=/g/11p5kwclk3&hl=pt-BR&q=Advocacia+Jo%C3%A3o+Guerra#lrd=0x7ab19d61d600507:0x53f2f7602f5dc50a,1,,,,',
   
   seo_title: 'Albuquerque Guerra Advogados | Advocacia Estratégica',

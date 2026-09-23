@@ -272,12 +272,12 @@ export const ContentSection: React.FC = () => {
                   </div>
 
                   <h3 className="text-2xl font-serif text-[#FFFDF8]">
-                    Advocacia João Guerra no Google
+                    Albuquerque Guerra Advogados
                   </h3>
 
                   <p className="text-xs text-[#F6F3EC]/80 flex items-center justify-center sm:justify-start gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    R. Arnóbio Marques, 253 - Santo Amaro, Recife - PE • Avaliações Verificadas
+                    Perfil Oficial • Avaliações Verificadas no Google
                   </p>
                 </div>
               </div>
