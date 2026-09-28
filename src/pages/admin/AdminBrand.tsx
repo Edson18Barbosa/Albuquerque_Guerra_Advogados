@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Palette, X, CheckCircle2, AlertTriangle, Image as ImageIcon } from 'lucide-react';
-import { getSiteSettings, saveSiteSettings, SiteSettings } from '../../lib/settingsHelper';
+import { getSiteSettings, fetchSiteSettingsAsync, saveSiteSettings, SiteSettings } from '../../lib/settingsHelper';
 
 interface MediaItem {
   id: string;
@@ -21,6 +21,7 @@ export const AdminBrand: React.FC = () => {
 
   useEffect(() => {
     setSettings(getSiteSettings());
+    fetchSiteSettingsAsync().then(setSettings);
     try {
       const stored = localStorage.getItem('albuquerque_guerra_media_library');
       if (stored) setMediaItems(JSON.parse(stored));

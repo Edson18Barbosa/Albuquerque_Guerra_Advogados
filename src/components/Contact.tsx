@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle2 } from 'lucide-react';
-import { getSiteSettings, SiteSettings } from '../lib/settingsHelper';
+import { getSiteSettings, fetchSiteSettingsAsync, SiteSettings } from '../lib/settingsHelper';
+import { supabase } from '../lib/supabase';
 
 export const Contact: React.FC = () => {
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [settings, setSettings] = useState<SiteSettings>(getSiteSettings());
 
   useEffect(() => {
-    setSettings(getSiteSettings());
+    fetchSiteSettingsAsync().then(setSettings);
   }, []);
 
   const [formData, setFormData] = useState({
@@ -21,7 +22,7 @@ export const Contact: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) {
       setError('Por favor, preencha todos os campos obrigatórios.');
@@ -33,7 +34,7 @@ export const Contact: React.FC = () => {
     }
     setError('');
 
-    // Save lead submission locally with the dynamically configured notification email
+    // Save lead submission locally and to Supabase with the dynamically configured notification email
     try {
       const destinationEmail = (settings && (settings.contact_notification_email || settings.contact_email)) || 'contato@albuquerqueguerra.adv.br';
       const newSubmission = {
@@ -47,6 +48,14 @@ export const Contact: React.FC = () => {
         created_at: new Date().toISOString()
       };
 
+      // 1. Save to Supabase site_contact_messages table
+      try {
+        await supabase.from('site_contact_messages').insert(newSubmission);
+      } catch (dbErr) {
+        console.warn('Could not save contact message to Supabase:', dbErr);
+      }
+
+      // 2. Save locally as fallback cache
       const existing = localStorage.getItem('albuquerque_guerra_contact_messages');
       const list = existing ? JSON.parse(existing) : [];
       list.unshift(newSubmission);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Home, X, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { getSiteSettings, saveSiteSettings, SiteSettings } from '../../lib/settingsHelper';
+import { getSiteSettings, fetchSiteSettingsAsync, saveSiteSettings, SiteSettings } from '../../lib/settingsHelper';
 
 export const AdminHome: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -9,6 +9,7 @@ export const AdminHome: React.FC = () => {
 
   useEffect(() => {
     setSettings(getSiteSettings());
+    fetchSiteSettingsAsync().then(setSettings);
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {

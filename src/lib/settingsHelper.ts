@@ -133,14 +133,21 @@ export const saveSiteSettings = async (settings: Partial<SiteSettings>): Promise
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updated));
   }
   
+  // Sanitize payload: strip any fields not present in Supabase table schema
+  const { google_business_name, ...dbPayload } = updated;
+
   // Try to write to Supabase (site_settings table, key 'global')
-  try {
-    const { error } = await supabase
-      .from('site_settings')
-      .upsert({ id: 'global', ...updated });
-    if (error) throw error;
-  } catch (err) {
-    console.warn('Could not sync settings to Supabase, saved locally:', err);
+  const { error } = await supabase
+    .from('site_settings')
+    .upsert({
+      id: 'global',
+      ...dbPayload,
+      updated_at: new Date().toISOString()
+    });
+
+  if (error) {
+    console.error('Error saving settings to Supabase:', error);
+    throw new Error(`Erro ao sincronizar com Supabase: ${error.message}`);
   }
   
   return updated;

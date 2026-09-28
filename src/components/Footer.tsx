@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowUp, Phone, Mail, MapPin } from 'lucide-react';
 import { Logo } from './Logo';
-import { getSiteSettings, SiteSettings } from '../lib/settingsHelper';
+import { getSiteSettings, fetchSiteSettingsAsync, SiteSettings } from '../lib/settingsHelper';
 
 export const Footer: React.FC = () => {
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [settings, setSettings] = useState<SiteSettings>(getSiteSettings());
 
   useEffect(() => {
-    setSettings(getSiteSettings());
+    fetchSiteSettingsAsync().then(setSettings);
   }, []);
 
   const scrollToTop = () => {

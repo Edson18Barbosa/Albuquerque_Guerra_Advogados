@@ -5,14 +5,14 @@ import {
 } from 'lucide-react';
 import { Article, VideoAd, GoogleReview } from '../types/contents';
 import { getArticles, getVideoAds, getGoogleReviews } from '../lib/contentsHelper';
-import { getSiteSettings, SiteSettings } from '../lib/settingsHelper';
+import { getSiteSettings, fetchSiteSettingsAsync, SiteSettings } from '../lib/settingsHelper';
 
 export const ContentSection: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'articles' | 'videos' | 'reviews'>('articles');
   const [articles, setArticles] = useState<Article[]>([]);
   const [videos, setVideos] = useState<VideoAd[]>([]);
   const [reviews, setReviews] = useState<GoogleReview[]>([]);
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [settings, setSettings] = useState<SiteSettings>(getSiteSettings());
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [activeVideoModal, setActiveVideoModal] = useState<VideoAd | null>(null);
   const [articleCategoryFilter, setArticleCategoryFilter] = useState('Todos');
@@ -20,17 +20,18 @@ export const ContentSection: React.FC = () => {
   useEffect(() => {
     const loadAllContents = async () => {
       try {
-        const [arts, vids, revs] = await Promise.all([
+        const [arts, vids, revs, liveSettings] = await Promise.all([
           getArticles(),
           getVideoAds(),
-          getGoogleReviews()
+          getGoogleReviews(),
+          fetchSiteSettingsAsync()
         ]);
         setArticles(arts.filter(a => a.is_active && a.status === 'Publicado'));
         // Only keep active videos that have a valid link
         const validVideos = vids.filter(v => v.is_active && v.video_url && v.video_url.trim() !== '');
         setVideos(validVideos);
         setReviews(revs.filter(r => r.is_active));
-        setSettings(getSiteSettings());
+        if (liveSettings) setSettings(liveSettings);
       } catch (err) {
         console.warn('Error loading contents in public section:', err);
       }
@@ -272,7 +273,7 @@ export const ContentSection: React.FC = () => {
                   </div>
 
                   <h3 className="text-2xl font-serif text-[#FFFDF8]">
-                    Albuquerque Guerra Advogados
+                    {settings?.google_business_name || 'Albuquerque Guerra Advogados'}
                   </h3>
 
                   <p className="text-xs text-[#F6F3EC]/80 flex items-center justify-center sm:justify-start gap-1.5">

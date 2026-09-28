@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, X, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
-import { getSiteSettings, saveSiteSettings, SiteSettings, defaultSettings, SETTINGS_STORAGE_KEY } from '../../lib/settingsHelper';
+import { getSiteSettings, fetchSiteSettingsAsync, saveSiteSettings, SiteSettings, defaultSettings, SETTINGS_STORAGE_KEY } from '../../lib/settingsHelper';
 import { supabase } from '../../lib/supabase';
 
 export const AdminSettings: React.FC = () => {
@@ -10,6 +10,7 @@ export const AdminSettings: React.FC = () => {
 
   useEffect(() => {
     setSettings(getSiteSettings());
+    fetchSiteSettingsAsync().then(setSettings);
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {

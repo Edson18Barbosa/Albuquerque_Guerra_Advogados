@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getSiteSettings, fetchSiteSettingsAsync } from '../lib/settingsHelper';
 
 interface LogoProps {
   className?: string;
@@ -7,6 +8,11 @@ interface LogoProps {
 
 export const Logo: React.FC<LogoProps> = ({ className = '', variant = 'horizontal' }) => {
   const [imgError, setImgError] = useState(false);
+  const [settings, setSettings] = useState(getSiteSettings());
+
+  useEffect(() => {
+    fetchSiteSettingsAsync().then(setSettings);
+  }, []);
 
   if (imgError) {
     // Fallback if the user hasn't uploaded the images to the public folder yet
@@ -52,7 +58,7 @@ export const Logo: React.FC<LogoProps> = ({ className = '', variant = 'horizonta
   if (variant === 'vertical') {
     return (
       <img 
-        src="/logo-vertical.png" 
+        src={settings.logo_vertical || "/logo-vertical.png"} 
         alt="Albuquerque Guerra Advogados" 
         className={`w-40 md:w-48 lg:w-56 object-contain ${className}`} 
         onError={() => setImgError(true)}
@@ -63,7 +69,7 @@ export const Logo: React.FC<LogoProps> = ({ className = '', variant = 'horizonta
   if (variant === 'monogram') {
     return (
       <img 
-        src="/logo-monogram.png" 
+        src={settings.logo_monogram || "/logo-monogram.png"} 
         alt="AG Advogados" 
         className={`w-12 h-12 md:w-16 md:h-16 object-contain ${className}`} 
         onError={() => setImgError(true)}
@@ -73,7 +79,7 @@ export const Logo: React.FC<LogoProps> = ({ className = '', variant = 'horizonta
 
   return (
     <img 
-      src="/logo-horizontal.png" 
+      src={settings.logo_horizontal || "/logo-horizontal.png"} 
       alt="Albuquerque Guerra Advogados" 
       className={`h-12 md:h-14 lg:h-16 object-contain ${className}`} 
       onError={() => setImgError(true)}

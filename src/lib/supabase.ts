@@ -14,8 +14,9 @@ export const getSupabaseConfig = () => {
     } catch (e) {}
   }
 
-  const url = customUrl || (import.meta.env && import.meta.env.VITE_SUPABASE_URL) || DEFAULT_URL;
-  const anonKey = customKey || (import.meta.env && import.meta.env.VITE_SUPABASE_ANON_KEY) || DEFAULT_KEY;
+  const metaEnv = (import.meta as any).env || {};
+  const url = customUrl || metaEnv.VITE_SUPABASE_URL || DEFAULT_URL;
+  const anonKey = customKey || metaEnv.VITE_SUPABASE_ANON_KEY || DEFAULT_KEY;
 
   return { url, anonKey };
 };

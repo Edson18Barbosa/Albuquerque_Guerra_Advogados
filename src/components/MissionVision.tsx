@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Target, Compass, Sparkles, Maximize2, X, ArrowRight } from 'lucide-react';
-import { getSiteSettings, SiteSettings } from '../lib/settingsHelper';
+import { getSiteSettings, fetchSiteSettingsAsync, SiteSettings } from '../lib/settingsHelper';
 
 export const MissionVision: React.FC = () => {
   const [activeMode, setActiveMode] = useState<'missao' | 'visao'>('missao');
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [settings, setSettings] = useState<SiteSettings>(getSiteSettings());
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    setSettings(getSiteSettings());
+    fetchSiteSettingsAsync().then(setSettings);
   }, []);
 
   if (!settings) return null;

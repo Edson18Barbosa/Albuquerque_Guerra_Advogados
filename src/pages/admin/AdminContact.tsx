@@ -3,7 +3,8 @@ import {
   Phone, X, CheckCircle2, AlertTriangle, Mail, MapPin, 
   Clock, Inbox, Trash2, Eye, Calendar, User, MessageSquare
 } from 'lucide-react';
-import { getSiteSettings, saveSiteSettings, SiteSettings } from '../../lib/settingsHelper';
+import { getSiteSettings, fetchSiteSettingsAsync, saveSiteSettings, SiteSettings } from '../../lib/settingsHelper';
+import { supabase } from '../../lib/supabase';
 
 export interface ContactMessage {
   id: string;
@@ -24,15 +25,27 @@ export const AdminContact: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error' | null, text: string }>({ type: null, text: '' });
 
-  const loadData = () => {
+  const loadData = async () => {
     setSettings(getSiteSettings());
+    fetchSiteSettingsAsync().then(setSettings);
+
     try {
-      const stored = localStorage.getItem('albuquerque_guerra_contact_messages');
-      if (stored) {
-        setMessages(JSON.parse(stored));
+      const { data, error } = await supabase
+        .from('site_contact_messages')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setMessages(data);
+        localStorage.setItem('albuquerque_guerra_contact_messages', JSON.stringify(data));
+      } else {
+        const stored = localStorage.getItem('albuquerque_guerra_contact_messages');
+        if (stored) setMessages(JSON.parse(stored));
       }
     } catch (e) {
-      console.warn('Error loading messages:', e);
+      console.warn('Error loading messages from Supabase:', e);
+      const stored = localStorage.getItem('albuquerque_guerra_contact_messages');
+      if (stored) setMessages(JSON.parse(stored));
     }
   };
 
@@ -46,7 +59,7 @@ export const AdminContact: React.FC = () => {
     setIsSubmitting(true);
     try {
       await saveSiteSettings(settings);
-      setStatusMsg({ type: 'success', text: 'Configurações e e-mail de recebimento salvos com sucesso!' });
+      setStatusMsg({ type: 'success', text: 'Configurações e e-mail de recebimento salvos com sucesso no Supabase!' });
       setTimeout(() => setStatusMsg({ type: null, text: '' }), 5000);
     } catch (err: any) {
       setStatusMsg({ type: 'error', text: 'Erro: ' + err.message });
@@ -55,12 +68,19 @@ export const AdminContact: React.FC = () => {
     }
   };
 
-  const handleDeleteMessage = (id: string) => {
+  const handleDeleteMessage = async (id: string) => {
     if (!confirm('Deseja excluir esta mensagem recebida?')) return;
     const updated = messages.filter(m => m.id !== id);
     setMessages(updated);
     localStorage.setItem('albuquerque_guerra_contact_messages', JSON.stringify(updated));
-    setStatusMsg({ type: 'success', text: 'Mensagem excluída.' });
+
+    try {
+      await supabase.from('site_contact_messages').delete().eq('id', id);
+    } catch (dbErr) {
+      console.warn('Could not delete message from Supabase:', dbErr);
+    }
+
+    setStatusMsg({ type: 'success', text: 'Mensagem excluída com sucesso.' });
     setTimeout(() => setStatusMsg({ type: null, text: '' }), 4000);
   };
 
