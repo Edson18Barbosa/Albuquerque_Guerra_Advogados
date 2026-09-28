@@ -133,15 +133,12 @@ export const saveSiteSettings = async (settings: Partial<SiteSettings>): Promise
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updated));
   }
   
-  // Sanitize payload: strip any fields not present in Supabase table schema
-  const { google_business_name, ...dbPayload } = updated;
-
   // Try to write to Supabase (site_settings table, key 'global')
   const { error } = await supabase
     .from('site_settings')
     .upsert({
       id: 'global',
-      ...dbPayload,
+      ...updated,
       updated_at: new Date().toISOString()
     });
 
