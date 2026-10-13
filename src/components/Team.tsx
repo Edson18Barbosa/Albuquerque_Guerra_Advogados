@@ -14,7 +14,7 @@ const initialDefaultTeam: TeamMember[] = [
     role: 'Sócia Fundadora • Coordenadora Trabalhista e Previdenciária',
     bio: 'Advogada especialista em contencioso estratégico e consultoria empresarial de alto nível. Com vasta experiência em tribunais, lidera a frente trabalhista do escritório com foco em rigor técnico, prevenção de passivos e resultados sólidos.',
     image: '/renata-albuquerque.jpg',
-    category: 'partner',
+    category: 'Sócia Fundadora',
   },
   {
     id: 'joao',
@@ -22,7 +22,7 @@ const initialDefaultTeam: TeamMember[] = [
     role: 'Sócio Fundador • Coordenador Estratégico e Institucional',
     bio: 'Sócio fundador com sólida atuação em litígios complexos e estruturação de negócios jurídicos. Combina visão estratégica refinada e dedicação integral à defesa dos interesses corporativos e individuais de nossos clientes.',
     image: '/joao-guerra.jpg',
-    category: 'partner',
+    category: 'Sócio Fundador',
   },
   {
     id: 'claudia',
@@ -30,7 +30,7 @@ const initialDefaultTeam: TeamMember[] = [
     role: 'Sócia • Coordenadora da Área Cível',
     bio: 'Sócia e coordenadora da área Cível do escritório. É formada em economia e em direito, contando com diversas pós-graduações e especializações em seu currículo que somam a uma advocacia de alta performance.',
     image: '/claudia-albuquerque.jpg',
-    category: 'partner',
+    category: 'Sócia',
   }
 ];
 

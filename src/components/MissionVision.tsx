@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, Compass, Sparkles, Maximize2, X, ArrowRight } from 'lucide-react';
+import { Target, Compass, Award, Maximize2, X, ArrowRight } from 'lucide-react';
 import { getSiteSettings, fetchSiteSettingsAsync, SiteSettings } from '../lib/settingsHelper';
 
 export const MissionVision: React.FC = () => {
@@ -66,7 +66,7 @@ export const MissionVision: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
               <div className="lg:col-span-8 space-y-6">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#374544] text-[#D8CBB3] text-xs font-semibold tracking-wider uppercase border border-[#D8CBB3]/30">
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Award className="w-3.5 h-3.5" />
                   <span>Missão Institucional</span>
                 </div>
 
@@ -105,7 +105,7 @@ export const MissionVision: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
               <div className="lg:col-span-8 space-y-6">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#374544] text-[#D8CBB3] text-xs font-semibold tracking-wider uppercase border border-[#D8CBB3]/30">
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Award className="w-3.5 h-3.5" />
                   <span>Visão de Futuro</span>
                 </div>
 

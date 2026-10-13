@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Briefcase, Landmark, Home, Users, Plus, Edit, Trash2, X, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { 
+  Briefcase, Landmark, Home, Users, Plus, Edit, Trash2, X, 
+  CheckCircle2, AlertTriangle, ArrowUp, ArrowDown 
+} from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface PracticeArea {
@@ -59,7 +62,8 @@ export const AdminPractice: React.FC = () => {
     title: '',
     summary: '',
     fullContent: '',
-    iconName: 'Briefcase'
+    iconName: 'Briefcase',
+    orderPosition: 1,
   });
 
   const loadData = async () => {
@@ -87,19 +91,59 @@ export const AdminPractice: React.FC = () => {
     loadData();
   }, []);
 
+  const saveReorderedList = async (newList: PracticeArea[]) => {
+    const formatted = newList.map((item, idx) => ({
+      ...item,
+      number: String(idx + 1).padStart(2, '0')
+    }));
+
+    setAreas(formatted);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(formatted));
+
+    try {
+      for (const item of formatted) {
+        await supabase.from('practice_areas').upsert(item);
+      }
+    } catch (err) {
+      console.warn('DB practice areas reorder sync failed:', err);
+    }
+  };
+
+  const handleMove = async (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === areas.length - 1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const reordered = [...areas];
+    const [removed] = reordered.splice(index, 1);
+    reordered.splice(targetIndex, 0, removed);
+
+    await saveReorderedList(reordered);
+    setStatusMsg({ type: 'success', text: 'Ordem de exibição atualizada com sucesso!' });
+    setTimeout(() => setStatusMsg({ type: null, text: '' }), 4000);
+  };
+
   const handleOpenAdd = () => {
     setSelectedArea(null);
-    setForm({ title: '', summary: '', fullContent: '', iconName: 'Briefcase' });
+    setForm({ 
+      title: '', 
+      summary: '', 
+      fullContent: '', 
+      iconName: 'Briefcase',
+      orderPosition: areas.length + 1
+    });
     setIsOpen(true);
   };
 
   const handleOpenEdit = (area: PracticeArea) => {
+    const currentIndex = areas.findIndex(a => a.id === area.id);
     setSelectedArea(area);
     setForm({
       title: area.title,
       summary: area.summary,
       fullContent: area.fullContent,
-      iconName: area.iconName
+      iconName: area.iconName,
+      orderPosition: currentIndex !== -1 ? currentIndex + 1 : 1
     });
     setIsOpen(true);
   };
@@ -108,30 +152,27 @@ export const AdminPractice: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const targetPos = Math.max(1, Math.min(Number(form.orderPosition), areas.length + (selectedArea ? 0 : 1)));
+
       const payload: PracticeArea = {
         id: selectedArea ? selectedArea.id : `practice-${Date.now()}`,
-        number: selectedArea ? selectedArea.number : String(areas.length + 1).padStart(2, '0'),
+        number: String(targetPos).padStart(2, '0'),
         title: form.title,
         summary: form.summary,
         fullContent: form.fullContent,
         iconName: form.iconName
       };
 
-      try {
-        await supabase.from('practice_areas').upsert(payload);
-      } catch (err) {
-        console.warn('DB practice areas save failed, local storage only:', err);
-      }
-
-      let updated = [];
+      const updatedList = [...areas];
       if (selectedArea) {
-        updated = areas.map(a => a.id === selectedArea.id ? payload : a);
+        const currentIdx = updatedList.findIndex(a => a.id === selectedArea.id);
+        if (currentIdx !== -1) updatedList.splice(currentIdx, 1);
+        updatedList.splice(targetPos - 1, 0, payload);
       } else {
-        updated = [...areas, payload];
+        updatedList.splice(targetPos - 1, 0, payload);
       }
 
-      setAreas(updated);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      await saveReorderedList(updatedList);
 
       setStatusMsg({ type: 'success', text: 'Área de atuação salva com sucesso!' });
       setIsOpen(false);
@@ -152,13 +193,8 @@ export const AdminPractice: React.FC = () => {
         console.warn('DB delete practice area failed:', err);
       }
 
-      const updated = areas.filter(a => a.id !== id).map((a, idx) => ({
-        ...a,
-        number: String(idx + 1).padStart(2, '0')
-      }));
-
-      setAreas(updated);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      const remaining = areas.filter(a => a.id !== id);
+      await saveReorderedList(remaining);
       setStatusMsg({ type: 'success', text: 'Área de atuação excluída com sucesso.' });
       setTimeout(() => setStatusMsg({ type: null, text: '' }), 5000);
     } catch (err: any) {
@@ -208,7 +244,7 @@ export const AdminPractice: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
-        {areas.map((area) => (
+        {areas.map((area, idx) => (
           <div key={area.id} className="p-6 bg-[#151f1f] border border-white/10 rounded-2xl flex flex-col justify-between gap-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -216,18 +252,41 @@ export const AdminPractice: React.FC = () => {
                   <div className="p-2 bg-white/5 rounded-lg border border-white/10">
                     {getIcon(area.iconName)}
                   </div>
-                  <span className="text-xs font-serif text-[#D8CBB3]">{area.number}</span>
+                  <span className="text-xs font-serif text-[#D8CBB3] font-semibold">{area.number}</span>
+
+                  {/* Move Up / Move Down buttons */}
+                  <div className="flex items-center gap-1 ml-1 bg-[#101616]/60 p-1 rounded-lg border border-white/5">
+                    <button 
+                      onClick={() => handleMove(idx, 'up')}
+                      disabled={idx === 0}
+                      className="p-1 hover:bg-white/10 text-[#F6F3EC] disabled:opacity-25 rounded transition-colors"
+                      title="Mover para cima (antecipar posição)"
+                    >
+                      <ArrowUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      onClick={() => handleMove(idx, 'down')}
+                      disabled={idx === areas.length - 1}
+                      className="p-1 hover:bg-white/10 text-[#F6F3EC] disabled:opacity-25 rounded transition-colors"
+                      title="Mover para baixo (postergar posição)"
+                    >
+                      <ArrowDown className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
+
                 <div className="flex gap-2">
                   <button 
                     onClick={() => handleOpenEdit(area)}
-                    className="p-2 hover:bg-white/5 text-[#D8CBB3] rounded-lg transition-colors"
+                    className="p-2 hover:bg-white/5 text-[#D8CBB3] rounded-lg transition-colors flex items-center gap-1 text-xs"
+                    title="Editar área"
                   >
                     <Edit className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => handleDelete(area.id)}
                     className="p-2 hover:bg-red-500/10 text-red-400 rounded-lg transition-colors"
+                    title="Excluir área"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -250,8 +309,8 @@ export const AdminPractice: React.FC = () => {
               </button>
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-3">
                   <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1.5">Título da Área</label>
                   <input 
                     type="text" 
@@ -272,6 +331,22 @@ export const AdminPractice: React.FC = () => {
                     <option value="Landmark">Tribunal (Tributário)</option>
                     <option value="Home">Casa (Imobiliário/Civil)</option>
                     <option value="Users">Pessoas (Família/Terceiro Setor)</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1.5">
+                    Ordem de Exibição
+                  </label>
+                  <select 
+                    value={form.orderPosition} 
+                    onChange={(e) => setForm({ ...form, orderPosition: Number(e.target.value) })}
+                    className="w-full bg-[#101616] border border-white/10 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
+                  >
+                    {Array.from({ length: areas.length + (selectedArea ? 0 : 1) }, (_, i) => i + 1).map((pos) => (
+                      <option key={pos} value={pos}>
+                        Posição {pos} {pos === 1 ? '(1º lugar)' : pos === 2 ? '(2º lugar)' : pos === 3 ? '(3º lugar)' : `(${pos}º lugar)`}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

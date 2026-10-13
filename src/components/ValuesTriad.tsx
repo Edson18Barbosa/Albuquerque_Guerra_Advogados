@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Eye, BookOpen, ArrowRight, Sparkles } from 'lucide-react';
+import { ShieldCheck, Eye, BookOpen, ArrowRight, Award } from 'lucide-react';
 import { DetailModal } from './DetailModal';
 import { ValueItem } from '../types';
 import { Logo } from './Logo';
@@ -74,7 +74,7 @@ O passar do tempo nunca poderá permitir que fiquemos satisfeitos com o conhecim
     fullContent: `Acreditamos que a advocacia deve ir além da solução de conflitos e da aplicação da técnica jurídica. Nossa atuação é guiada pelo propósito de contribuir para o fortalecimento de pessoas, organizações e instituições, oferecendo soluções que produzam resultados consistentes e gerem valor duradouro.
 
 Por meio da combinação entre conhecimento, estratégia e proximidade, buscamos auxiliar nossos clientes na superação de desafios complexos, na proteção de seus interesses e na construção de ambientes mais seguros, eficientes e sustentáveis para o desenvolvimento de suas atividades.`,
-    iconName: 'Sparkles',
+    iconName: 'Award',
     image: '/about-office.png',
   }
 ];
@@ -177,7 +177,7 @@ export const ValuesTriad: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-8 space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#374544] text-[#D8CBB3] text-xs font-semibold tracking-wider uppercase border border-[#D8CBB3]/30">
-                <Sparkles className="w-3.5 h-3.5" />
+                <Award className="w-3.5 h-3.5" />
                 <span>Valor Fundamental {currentVal.number}</span>
               </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, FileText, CheckSquare, TrendingUp, Sparkles, ShieldCheck, Target, Award } from 'lucide-react';
+import { Search, FileText, CheckSquare, TrendingUp, ShieldCheck, Target, Award } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const STORAGE_KEY = 'albuquerque_guerra_site_workflow';
@@ -86,7 +86,7 @@ export const Workflow: React.FC = () => {
       case '05': return Target;
       case '06': return ShieldCheck;
       case '07': return Award;
-      default: return Sparkles;
+      default: return Award;
     }
   };
 

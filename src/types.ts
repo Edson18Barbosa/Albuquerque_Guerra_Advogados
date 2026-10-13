@@ -24,7 +24,8 @@ export interface TeamMember {
   role: string;
   bio: string;
   image: string;
-  category: 'partner' | 'associate';
+  category: string;
+  display_order?: number;
 }
 
 export interface GalleryItem {

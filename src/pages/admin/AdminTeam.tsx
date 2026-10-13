@@ -26,6 +26,26 @@ interface MediaItem {
 
 const TEAM_STORAGE_KEY = 'albuquerque_guerra_team_members';
 const MEDIA_STORAGE_KEY = 'albuquerque_guerra_media_library';
+const CATEGORIES_STORAGE_KEY = 'albuquerque_guerra_team_categories';
+
+const DEFAULT_CATEGORIES = [
+  'Sócio Fundador',
+  'Sócia Fundadora',
+  'Sócio',
+  'Sócia',
+  'Associado',
+  'Associada',
+  'Consultor',
+  'Consultora'
+];
+
+export const getCategoryLabel = (cat: string) => {
+  if (!cat) return 'Sócio';
+  if (cat === 'partner') return 'Sócio Fundador';
+  if (cat === 'associate') return 'Associado';
+  if (cat === 'consultant') return 'Consultor';
+  return cat;
+};
 
 const defaultTeam: TeamMember[] = [
   {
@@ -34,7 +54,7 @@ const defaultTeam: TeamMember[] = [
     role: 'Sócia Fundadora • Coordenadora Trabalhista e Previdenciária',
     bio: 'Advogada especialista em contencioso estratégico e consultoria empresarial de alto nível. Com vasta experiência em tribunais, lidera a frente trabalhista do escritório com foco em rigor técnico, prevenção de passivos e resultados sólidos.',
     image: '/renata-albuquerque.jpg',
-    category: 'partner',
+    category: 'Sócia Fundadora',
     display_order: 1
   },
   {
@@ -43,7 +63,7 @@ const defaultTeam: TeamMember[] = [
     role: 'Sócio Fundador • Coordenador Estratégico e Institucional',
     bio: 'Sócio fundador com sólida atuação em litígios complexos e estruturação de negócios jurídicos. Combina visão estratégica refinada e dedicação integral à defesa dos interesses corporativos e individuais de nossos clientes.',
     image: '/joao-guerra.jpg',
-    category: 'partner',
+    category: 'Sócio Fundador',
     display_order: 2
   },
   {
@@ -52,7 +72,7 @@ const defaultTeam: TeamMember[] = [
     role: 'Sócia • Coordenadora da Área Cível',
     bio: 'Sócia e coordenadora da área Cível do escritório. É formada em economia e em direito, contando com diversas pós-graduações e especializações em seu currículo que somam a uma advocacia de alta performance.',
     image: '/claudia-albuquerque.jpg',
-    category: 'partner',
+    category: 'Sócia',
     display_order: 3
   }
 ];
@@ -60,6 +80,9 @@ const defaultTeam: TeamMember[] = [
 export const AdminTeam: React.FC = () => {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error' | 'info' | null, text: string }>({ type: null, text: '' });
@@ -75,7 +98,7 @@ export const AdminTeam: React.FC = () => {
     role: '',
     bio: '',
     image: '',
-    category: 'partner',
+    category: 'Sócio Fundador',
     display_order: 1
   });
 
@@ -89,6 +112,20 @@ export const AdminTeam: React.FC = () => {
   // Load team members and media library items
   const loadData = async () => {
     setIsLoading(true);
+
+    // Load saved categories
+    try {
+      const storedCats = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+      if (storedCats) {
+        const parsed = JSON.parse(storedCats);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCategories(Array.from(new Set([...DEFAULT_CATEGORIES, ...parsed])));
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load custom categories:', e);
+    }
+
     // 1. Fetch team members
     try {
       const { data, error } = await supabase
@@ -101,10 +138,16 @@ export const AdminTeam: React.FC = () => {
       if (data && data.length > 0) {
         setMembers(data);
         localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(data));
+        // Merge any existing categories from members
+        const memberCats = data.map((m: any) => getCategoryLabel(m.category)).filter(Boolean);
+        setCategories(prev => Array.from(new Set([...prev, ...memberCats])));
       } else {
         const stored = localStorage.getItem(TEAM_STORAGE_KEY);
         if (stored) {
-          setMembers(JSON.parse(stored));
+          const parsed = JSON.parse(stored);
+          setMembers(parsed);
+          const memberCats = parsed.map((m: any) => getCategoryLabel(m.category)).filter(Boolean);
+          setCategories(prev => Array.from(new Set([...prev, ...memberCats])));
         } else {
           setMembers(defaultTeam);
           localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(defaultTeam));
@@ -114,7 +157,10 @@ export const AdminTeam: React.FC = () => {
       console.warn('Supabase team fetch failed, loading local:', err.message);
       const stored = localStorage.getItem(TEAM_STORAGE_KEY);
       if (stored) {
-        setMembers(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        setMembers(parsed);
+        const memberCats = parsed.map((m: any) => getCategoryLabel(m.category)).filter(Boolean);
+        setCategories(prev => Array.from(new Set([...prev, ...memberCats])));
       } else {
         setMembers(defaultTeam);
         localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(defaultTeam));
@@ -147,24 +193,44 @@ export const AdminTeam: React.FC = () => {
       role: '',
       bio: '',
       image: '/joao-guerra.jpg',
-      category: 'partner',
+      category: 'Sócio Fundador',
       display_order: members.length + 1
     });
     setSelectedMember(null);
+    setIsAddingCategory(false);
+    setNewCategoryName('');
     setIsOpen(true);
   };
 
   const handleOpenEdit = (member: TeamMember) => {
     setSelectedMember(member);
+    const catLabel = getCategoryLabel(member.category);
+    if (!categories.includes(catLabel)) {
+      setCategories(prev => [...prev, catLabel]);
+    }
     setForm({
       name: member.name,
       role: member.role,
       bio: member.bio,
       image: member.image,
-      category: member.category,
+      category: catLabel,
       display_order: member.display_order || 1
     });
+    setIsAddingCategory(false);
+    setNewCategoryName('');
     setIsOpen(true);
+  };
+
+  const handleAddCategory = () => {
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+    const updated = Array.from(new Set([...categories, trimmed]));
+    setCategories(updated);
+    localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(updated));
+    setForm(prev => ({ ...prev, category: trimmed }));
+    setNewCategoryName('');
+    setIsAddingCategory(false);
+    showStatus('success', `Categoria "${trimmed}" adicionada com sucesso!`);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -379,7 +445,12 @@ export const AdminTeam: React.FC = () => {
               {/* Contents */}
               <div className="p-6 flex-grow flex flex-col justify-between gap-4">
                 <div className="space-y-2">
-                  <h3 className="text-xl font-serif text-[#FFFDF8] font-medium">{member.name}</h3>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-xl font-serif text-[#FFFDF8] font-medium">{member.name}</h3>
+                    <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-[#374544]/80 text-[#D8CBB3] border border-[#D8CBB3]/30 shrink-0">
+                      {getCategoryLabel(member.category)}
+                    </span>
+                  </div>
                   <p className="text-xs text-[#D8CBB3] font-semibold tracking-wider uppercase">{member.role}</p>
                   <p className="text-xs text-[#F6F3EC]/70 line-clamp-3 leading-relaxed font-light">{member.bio}</p>
                 </div>
@@ -483,18 +554,71 @@ export const AdminTeam: React.FC = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1.5">Categoria</label>
-                      <select 
-                        value={form.category}
-                        onChange={(e) => setForm({ ...form, category: e.target.value })}
-                        className="w-full bg-[#101616] border border-white/10 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
-                      >
-                        <option value="partner">Sócio Fundador</option>
-                        <option value="associate">Associado</option>
-                        <option value="consultant">Consultor</option>
-                      </select>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider">
+                          Categoria
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingCategory(!isAddingCategory)}
+                          className="text-[10px] text-[#D8CBB3] hover:text-[#FFFDF8] underline flex items-center gap-0.5 font-medium transition-colors"
+                        >
+                          <Plus className="w-3 h-3" /> {isAddingCategory ? 'Cancelar' : '+ Nova Categoria'}
+                        </button>
+                      </div>
+
+                      {isAddingCategory ? (
+                        <div className="space-y-1.5">
+                          <div className="flex gap-1.5">
+                            <input
+                              type="text"
+                              placeholder="Nova categoria (ex: Sócia)..."
+                              value={newCategoryName}
+                              onChange={(e) => setNewCategoryName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddCategory();
+                                }
+                              }}
+                              className="flex-1 bg-[#101616] border border-[#D8CBB3]/50 rounded-xl py-1.5 px-2.5 text-xs text-[#F6F3EC] focus:outline-none"
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={handleAddCategory}
+                              className="px-2.5 py-1.5 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold text-xs rounded-xl transition-all shrink-0"
+                            >
+                              Add
+                            </button>
+                          </div>
+                          <span className="text-[10px] text-[#F6F3EC]/50 block">Digite e clique em Add.</span>
+                        </div>
+                      ) : (
+                        <select 
+                          value={form.category}
+                          onChange={(e) => {
+                            if (e.target.value === '__NEW__') {
+                              setIsAddingCategory(true);
+                            } else {
+                              setForm({ ...form, category: e.target.value });
+                            }
+                          }}
+                          className="w-full bg-[#101616] border border-white/10 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-[#D8CBB3]/50 text-[#F6F3EC]"
+                        >
+                          {!categories.includes(form.category) && form.category && (
+                            <option value={form.category}>{getCategoryLabel(form.category)}</option>
+                          )}
+                          {categories.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                          <option value="__NEW__" className="text-[#D8CBB3] font-semibold">+ Criar nova categoria...</option>
+                        </select>
+                      )}
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-[#F6F3EC]/70 uppercase tracking-wider mb-1.5">Ordem de Exibição</label>
