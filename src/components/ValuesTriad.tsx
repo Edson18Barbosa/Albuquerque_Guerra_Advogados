@@ -57,14 +57,24 @@ A diligência orienta o monitoramento e o impulsionamento semanal dos processos.
 
 Um entendimento que existia ontem pode já não existir hoje e talvez volte a existir amanhã. Existe uma lógica jurídica e uma ciência por trás dessa dinâmica, mas o conhecimento com o qual trabalhamos está em constante mutação.
 
-Por isso, a vontade de aprender, pesquisar e se atualizar é uma característica necessária e sempre presente em nossa atuação. A sede pelo conhecimento, que constitui o terceiro de nossos valores, dirige e orienta nossa atividade, sempre com o propósito de construir e entregar a melhor solução ao destinatário de nossos serviços: o cliente.
+Por isso, a vontade de aprender, pesquisar e se atualizar é uma característica necessária e sempre presente em nossa atuação. A sede pelo conhecimento, que constitui um de nossos valores fundamentais, dirige e orienta nossa atividade, sempre com o propósito de construir e entregar a melhor solução ao destinatário de nossos serviços: o cliente.
 
 Buscamos também acompanhar a evolução tecnológica e os impactos que ela produz em nossas atividades. Da padronização de procedimentos e sistemas operacionais ao uso adequado e supervisionado da inteligência artificial, nossas escolhas são sempre voltadas à entrega do melhor resultado.
 
-O passar do tempo nunca poderá permitir que fiquemos satisfeitos com o conhecimento até então adquirido. Não admitimos a estagnação.
-
-Com isso, completamos a tríade de valores que orienta nossa atuação: diligência, transparência e compromisso com o conhecimento.`,
+O passar do tempo nunca poderá permitir que fiquemos satisfeitos com o conhecimento até então adquirido. Não admitimos a estagnação.`,
     iconName: 'BookOpen',
+    image: '/about-office.png',
+  },
+  {
+    id: 'proposito',
+    number: '04',
+    title: 'Propósito',
+    subtitle: 'Excelência jurídica a serviço da geração de impacto positivo',
+    summary: 'O propósito orienta nossas escolhas e define a forma como exercemos a advocacia. É ele que nos motiva a colocar a excelência jurídica a serviço da geração de impacto positivo para nossos clientes, para as instituições que representamos e para a sociedade.',
+    fullContent: `Acreditamos que a advocacia deve ir além da solução de conflitos e da aplicação da técnica jurídica. Nossa atuação é guiada pelo propósito de contribuir para o fortalecimento de pessoas, organizações e instituições, oferecendo soluções que produzam resultados consistentes e gerem valor duradouro.
+
+Por meio da combinação entre conhecimento, estratégia e proximidade, buscamos auxiliar nossos clientes na superação de desafios complexos, na proteção de seus interesses e na construção de ambientes mais seguros, eficientes e sustentáveis para o desenvolvimento de suas atividades.`,
+    iconName: 'Sparkles',
     image: '/about-office.png',
   }
 ];
@@ -85,10 +95,10 @@ export const ValuesTriad: React.FC = () => {
         if (error) throw error;
 
         if (data && data.length > 0) {
-          // Map icon based on id
-          const mapped = data.map((d: any) => ({
+          // Map sequential numbers
+          const mapped = data.map((d: any, index: number) => ({
             ...d,
-            number: d.id === 'diligencia' ? '01' : d.id === 'transparencia' ? '02' : '03'
+            number: String(index + 1).padStart(2, '0')
           }));
           setValues(mapped);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
@@ -128,13 +138,13 @@ export const ValuesTriad: React.FC = () => {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-[#D8CBB3] font-serif text-sm tracking-widest block mb-3">
-            04 / TRÍADE DE VALORES
+            04 / NOSSOS VALORES
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-[#FFFDF8] font-light mb-6 leading-tight">
-            Transparência, diligência e sede pelo <span className="text-[#D8CBB3] italic">conhecimento.</span>
+            Princípios sólidos que orientam nossa <span className="text-[#D8CBB3] italic">atuação.</span>
           </h2>
           <p className="text-[#F6F3EC]/80 text-base md:text-lg font-light leading-relaxed">
-            Pautamos nossos procedimentos nesta tríade de valores por entendermos que, dessa forma, conseguimos entregar o melhor resultado.
+            Pautamos nossos procedimentos nestes valores fundamentais por entendermos que, dessa forma, conseguimos entregar o melhor resultado e gerar impacto positivo.
           </p>
         </div>
 

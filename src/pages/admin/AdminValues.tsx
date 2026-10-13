@@ -38,6 +38,14 @@ const defaultValues: ValueItem[] = [
     fullContent: 'A complexidade das leis exige atualização constante. Nossa equipe participa ativamente de cursos, pós-graduações e grupos de pesquisa, aplicando o conhecimento jurídico mais recente e inovador na defesa e consultoria dos nossos clientes.',
     iconName: 'BookOpen',
     image: '/about-office.png',
+  },
+  {
+    id: 'proposito',
+    title: 'Propósito',
+    summary: 'O propósito orienta nossas escolhas e define a forma como exercemos a advocacia. É ele que nos motiva a colocar a excelência jurídica a serviço da geração de impacto positivo para nossos clientes, para as instituições que representamos e para a sociedade.',
+    fullContent: 'Acreditamos que a advocacia deve ir além da solução de conflitos e da aplicação da técnica jurídica. Nossa atuação é guiada pelo propósito de contribuir para o fortalecimento de pessoas, organizações e instituições, oferecendo soluções que produzam resultados consistentes e gerem valor duradouro.\n\nPor meio da combinação entre conhecimento, estratégia e proximidade, buscamos auxiliar nossos clientes na superação de desafios complexos, na proteção de seus interesses e na construção de ambientes mais seguros, eficientes e sustentáveis para o desenvolvimento de suas atividades.',
+    iconName: 'Sparkles',
+    image: '/about-office.png',
   }
 ];
 

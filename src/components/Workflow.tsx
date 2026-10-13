@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, FileText, CheckSquare, TrendingUp } from 'lucide-react';
+import { Search, FileText, CheckSquare, TrendingUp, Sparkles, ShieldCheck, Target, Award } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const STORAGE_KEY = 'albuquerque_guerra_site_workflow';
@@ -83,7 +83,10 @@ export const Workflow: React.FC = () => {
       case '02': return FileText;
       case '03': return CheckSquare;
       case '04': return TrendingUp;
-      default: return Search;
+      case '05': return Target;
+      case '06': return ShieldCheck;
+      case '07': return Award;
+      default: return Sparkles;
     }
   };
 
@@ -104,12 +107,12 @@ export const Workflow: React.FC = () => {
             Nossa forma de <span className="text-[#D8CBB3] italic">atuação.</span>
           </h2>
           <p className="text-[#F6F3EC]/80 text-base md:text-lg font-light">
-            Um processo estruturado em quatro etapas para garantir segurança, previsibilidade e excelência em cada caso.
+            Um processo metodológico estruturado para garantir segurança, previsibilidade e excelência em cada caso.
           </p>
         </div>
 
         {/* Timeline Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative">
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${steps.length <= 3 ? 'lg:grid-cols-3' : steps.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-8 relative`}>
           
           {steps.map((step) => {
             const Icon = getIcon(step.number);
