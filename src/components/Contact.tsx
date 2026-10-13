@@ -20,12 +20,13 @@ export const Contact: React.FC = () => {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) {
-      setError('Por favor, preencha todos os campos obrigatórios.');
+    if (!formData.name || !formData.email || !formData.phone || !formData.message) {
+      setError('Por favor, preencha todos os campos obrigatórios (*).');
       return;
     }
     if (!formData.privacy) {
@@ -33,6 +34,7 @@ export const Contact: React.FC = () => {
       return;
     }
     setError('');
+    setIsSending(true);
 
     // Save lead submission locally and to Supabase with the dynamically configured notification email
     try {
@@ -60,8 +62,34 @@ export const Contact: React.FC = () => {
       const list = existing ? JSON.parse(existing) : [];
       list.unshift(newSubmission);
       localStorage.setItem('albuquerque_guerra_contact_messages', JSON.stringify(list));
+
+      // 3. Dispatch real email to the configured notification inbox
+      try {
+        await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(destinationEmail)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            _subject: `Novo Contato do Site: ${formData.name} (${formData.area})`,
+            _replyto: formData.email,
+            _template: 'table',
+            'Nome Completo': formData.name,
+            'E-mail': formData.email,
+            'Telefone / WhatsApp': formData.phone,
+            'Área de Interesse': formData.area,
+            'Mensagem': formData.message,
+            'Data de Envio': new Date().toLocaleString('pt-BR')
+          })
+        });
+      } catch (emailErr) {
+        console.warn('Direct email dispatch notification error:', emailErr);
+      }
     } catch (err) {
       console.warn('Error recording message:', err);
+    } finally {
+      setIsSending(false);
     }
 
     setSubmitted(true);
@@ -221,12 +249,13 @@ export const Contact: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-xs font-semibold text-[#F6F3EC]/80 uppercase tracking-wider mb-2">
-                        Telefone / WhatsApp
+                        Telefone / WhatsApp *
                       </label>
                       <input
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        required
                         className="w-full bg-[#151f1f] border border-[#D8CBB3]/20 rounded-xl py-3 px-4 text-[#F6F3EC] focus:outline-none focus:border-[#D8CBB3] transition-colors"
                         placeholder="(81) 99999-9999"
                       />
@@ -280,9 +309,10 @@ export const Contact: React.FC = () => {
 
                   <button
                     type="submit"
-                    className="w-full py-4 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-sm transition-all duration-300 shadow-xl flex items-center justify-center gap-2 group cursor-pointer"
+                    disabled={isSending}
+                    className="w-full py-4 bg-[#D8CBB3] hover:bg-[#FFFDF8] text-[#101616] font-semibold rounded-xl text-sm transition-all duration-300 shadow-xl flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50"
                   >
-                    <span>Enviar mensagem</span>
+                    <span>{isSending ? 'Enviando mensagem...' : 'Enviar mensagem'}</span>
                     <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                   </button>
                 </form>
